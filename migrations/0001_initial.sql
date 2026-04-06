@@ -39,3 +39,7 @@ CREATE TABLE chapters (
     FOREIGN KEY (novel_id) REFERENCES novels(id) ON DELETE CASCADE,
     UNIQUE (novel_id, chapter_number)
 );
+
+-- Composite index for querying chapters by novel (already created by unique constraint,
+-- but keeping explicit for documentation purposes)
+CREATE INDEX idx_chapters_novel_id_chapter_number ON chapters(novel_id, chapter_number);

@@ -11,7 +11,7 @@ export interface Novel {
   title: string;
   author: string;
   description: string;
-  cover_url: string | null;
+  cover_image_key: string | null;
   category: string;
   status: 'ongoing' | 'completed';
   created_at: number;
@@ -22,8 +22,8 @@ export interface Chapter {
   id: number;
   novel_id: number;
   title: string;
-  content_url: string | null;
-  order: number;
+  content_key: string | null;
+  chapter_number: number;
   created_at: number;
   updated_at: number;
 }

@@ -2,7 +2,10 @@ import type { Context, Next } from 'hono';
 import type { Env } from './types';
 
 async function timingSafeEqual(a: Uint8Array, b: Uint8Array): Promise<boolean> {
-  const result = await (crypto.subtle as any).timingSafeEqual(a, b);
+  const subtle = crypto.subtle as unknown as {
+    timingSafeEqual: (a: Uint8Array, b: Uint8Array) => Promise<ArrayBuffer>;
+  };
+  const result = await subtle.timingSafeEqual(a, b);
   const view = new Uint8Array(result);
   let diff = 0;
   for (const byte of view) {
