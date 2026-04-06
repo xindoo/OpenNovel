@@ -1,6 +1,9 @@
 -- Initial migration for OpenNovel
 -- Creates novels and chapters tables
 
+DROP TABLE IF EXISTS chapters;
+DROP TABLE IF EXISTS novels;
+
 CREATE TABLE novels (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
@@ -36,6 +39,3 @@ CREATE TABLE chapters (
     FOREIGN KEY (novel_id) REFERENCES novels(id) ON DELETE CASCADE,
     UNIQUE (novel_id, chapter_number)
 );
-
--- Composite index for ordered chapter listing within a novel
-CREATE INDEX idx_chapters_novel_id_chapter_number ON chapters(novel_id, chapter_number);
