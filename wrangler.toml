@@ -19,3 +19,14 @@ bucket_name = "opennovel-storage"
 
 [dev]
 port = 8787
+
+# Environment-specific configuration
+# Local development
+[env.development]
+routes = []
+
+# Production deployment
+[env.production]
+# routes = [
+#   { pattern = "your-domain.com/*", custom_domain = true }
+# ]
