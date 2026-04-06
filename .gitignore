@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+frontend/dist/
+
+# Environment variables
+.env
+.env.local
+
+# Wrangler
+.wrangler/
+.dev.vars
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs
+*.log
+
+# Coverage
+coverage
+*.lcov
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
