@@ -36,3 +36,5 @@ coverage
 *.tmp
 *.temp
 .cache/
+.gstack/
+.assets_mapping

@@ -1,6 +1,7 @@
 name = "opennovel"
 compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
+main = "src/index.ts"
 
 # Static assets - frontend build output
 assets = { binding = "ASSETS", directory = "./frontend/dist", run_worker_first = true }
@@ -9,7 +10,7 @@ assets = { binding = "ASSETS", directory = "./frontend/dist", run_worker_first =
 [[d1_databases]]
 binding = "DB"
 database_name = "opennovel-db"
-database_id = "" # Set after database creation
+database_id = "ad0bf71a-ac52-4677-8d88-f7b3cbb890ea"
 migrations_dir = "migrations"
 
 # R2 Storage binding
