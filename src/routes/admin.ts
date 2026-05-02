@@ -249,7 +249,8 @@ adminRouter.post('/novels/:id/upload-cover', async (c) => {
     return c.json(response, 400);
   }
 
-  const storageKey = `novels/${id}/covers/${file.name.replace(/\s+/g, '-')}`;
+  const ext = file.name.split('.').pop() || 'png';
+  const storageKey = `novels/${id}/covers/${crypto.randomUUID()}.${ext}`;
 
   if (existing.cover_image_key) {
     await c.env.STORAGE.delete(existing.cover_image_key);
