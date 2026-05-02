@@ -20,7 +20,7 @@ publicRouter.get('/categories', async (c) => {
   const tagCounts = new Map<string, number>();
   for (const row of results) {
     if (!row.category) continue;
-    const tags = row.category.split(',').map(t => t.trim()).filter(Boolean);
+    const tags = row.category.split(/[,，]/).map(t => t.trim()).filter(Boolean);
     for (const tag of tags) {
       tagCounts.set(tag, (tagCounts.get(tag) || 0) + 1);
     }

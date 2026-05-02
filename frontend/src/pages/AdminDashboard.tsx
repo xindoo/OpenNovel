@@ -307,7 +307,7 @@ export function AdminDashboard() {
                         <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{novel.author}</p>
                         <div className="flex items-center gap-2 mt-1">
                           <div className="flex flex-wrap gap-1">
-                            {(novel.category || '未分类').split(',').map((tag, i) => (
+                            {(novel.category || '未分类').split(/[,，]/).map((tag, i) => (
                               <span key={i} className="text-xs px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full whitespace-nowrap">
                                 {tag.trim()}
                               </span>

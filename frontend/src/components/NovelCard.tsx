@@ -39,7 +39,7 @@ export function NovelCard({ novel }: NovelCardProps) {
         <p className="text-sm text-gray-500 mb-2">{novel.author}</p>
         <div className="flex items-center justify-between">
           <div className="flex flex-wrap gap-1">
-            {novel.category.split(',').map((tag, i) => (
+            {novel.category.split(/[,，]/).map((tag, i) => (
               <span key={i} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 whitespace-nowrap">
                 {tag.trim()}
               </span>
