@@ -4,7 +4,7 @@ compatibility_flags = ["nodejs_compat"]
 main = "src/index.ts"
 
 # Static assets - frontend build output
-assets = { binding = "ASSETS", directory = "./frontend/dist", run_worker_first = true }
+assets = { binding = "ASSETS", directory = "./frontend/dist", run_worker_first = true, single_page_application = true }
 
 # D1 Database binding
 [[d1_databases]]
