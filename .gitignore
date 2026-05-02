@@ -38,3 +38,4 @@ coverage
 .cache/
 .gstack/
 .assets_mapping
+.worktrees/
