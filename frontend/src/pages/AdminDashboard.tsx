@@ -117,7 +117,6 @@ export function AdminDashboard() {
       description: form.description,
       category: form.category,
       status: form.status as 'ongoing' | 'completed',
-      cover_image_key: form.cover_image_key,
     };
 
     let result;

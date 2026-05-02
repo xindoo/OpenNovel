@@ -144,7 +144,7 @@ export async function uploadCover(
   // Content-Type is set automatically by browser for FormData
   delete headers['Content-Type'];
 
-  const response = await fetch(`/api/admin/novels/${novelId}/cover`, {
+  const response = await fetch(`/api/admin/novels/${novelId}/upload-cover`, {
     method: 'POST',
     headers,
     body: formData,

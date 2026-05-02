@@ -232,7 +232,7 @@ publicRouter.get('/novels/:id/chapters/:chapterId', async (c) => {
 
 // GET /api/storage/*key - Serve image/asset from R2 with proper content-type
 publicRouter.get('/storage/*key', async (c) => {
-  const key = c.req.param('key');
+  const key = c.req.param('key')?.replace(/^\/+/, '');
 
   if (!key) {
     const response: ApiResponse = {

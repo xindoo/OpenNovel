@@ -147,8 +147,27 @@ adminRouter.put('/novels/:id', async (c) => {
     UPDATE novels SET ${updates.join(', ')} WHERE id = ?
   `).bind(...params).run();
 
-  const response: ApiResponse = {
-    success: true
+  const novel = await c.env.DB.prepare(`
+    SELECT * FROM novels WHERE id = ?
+  `).bind(id).first<Novel>();
+
+  if (!novel) {
+    const response: ApiResponse = {
+      success: false,
+      error: 'Failed to retrieve updated novel'
+    };
+    return c.json(response, 500);
+  }
+
+  const novelWithTimestamps: Novel = {
+    ...novel,
+    created_at: new Date(novel.created_at).getTime() / 1000,
+    updated_at: new Date(novel.updated_at).getTime() / 1000
+  };
+
+  const response: ApiResponse<Novel> = {
+    success: true,
+    data: novelWithTimestamps
   };
 
   return c.json(response);
@@ -212,7 +231,7 @@ adminRouter.post('/novels/:id/upload-cover', async (c) => {
   }
 
   const formData = await c.req.formData();
-  const file = formData.get('file') as File | null;
+  const file = (formData.get('cover') || formData.get('file')) as File | null;
 
   if (!file) {
     const response: ApiResponse = {
@@ -246,10 +265,10 @@ adminRouter.post('/novels/:id/upload-cover', async (c) => {
     UPDATE novels SET cover_image_key = ?, updated_at = datetime('now') WHERE id = ?
   `).bind(storageKey, id).run();
 
-  const response: ApiResponse<{ key: string }> = {
+  const response: ApiResponse<{ coverUrl: string }> = {
     success: true,
     data: {
-      key: storageKey
+      coverUrl: storageKey
     }
   };
 
