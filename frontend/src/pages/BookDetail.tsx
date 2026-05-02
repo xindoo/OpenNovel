@@ -109,14 +109,14 @@ export function BookDetail() {
             {novel.title}
           </h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{novel.author}</p>
-          <div className="flex items-center gap-2 mt-2">
+          <div className="flex flex-wrap items-center gap-2 mt-2">
             {novel.category && novel.category.split(',').map((tag, i) => (
-              <span key={i} className="px-2 py-0.5 text-xs bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 rounded">
+              <span key={i} className="px-2 py-0.5 text-xs whitespace-nowrap bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 rounded">
                 {tag.trim()}
               </span>
             ))}
             {novel.status && (
-              <span className={`px-2 py-0.5 text-xs rounded ${
+              <span className={`px-2 py-0.5 text-xs whitespace-nowrap rounded ${
                 novel.status === 'completed'
                   ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300'
                   : 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300'
