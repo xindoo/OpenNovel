@@ -15,8 +15,4 @@ app.use('/*', cors({
 app.route('/api', publicRouter);
 app.route('/api/admin', adminRouter);
 
-app.get('/*', async (c) => {
-  return c.env.ASSETS.fetch(c.req.raw);
-});
-
 export default app;
