@@ -6,12 +6,90 @@ import { useRecentReads } from '../hooks/useRecentReads';
 import { getStorageUrl } from '../api';
 
 const FONT_SIZES = [14, 16, 18, 20, 22] as const;
-const THEMES = [
-  { name: 'default', bg: 'bg-white dark:bg-gray-900', text: 'text-gray-900 dark:text-gray-100' },
-  { name: 'sepia', bg: 'bg-amber-50 dark:bg-amber-900/20', text: 'text-amber-900 dark:text-amber-100' },
-  { name: 'green', bg: 'bg-green-50 dark:bg-green-900/20', text: 'text-green-900 dark:text-green-100' },
-  { name: 'dark', bg: 'bg-gray-950', text: 'text-gray-200' },
-] as const;
+
+interface ReadingTheme {
+  name: string;
+  label: string;
+  bg: string;
+  text: string;
+  toolbarBg: string;
+  toolbarText: string;
+  toolbarHover: string;
+  toolbarBorder: string;
+  sidebarBg: string;
+  sidebarText: string;
+  sidebarHover: string;
+  sidebarBorder: string;
+  progressBg: string;
+  progressText: string;
+}
+
+const THEMES: ReadingTheme[] = [
+  {
+    name: 'default',
+    label: '默认',
+    bg: 'bg-white',
+    text: 'text-gray-900',
+    toolbarBg: 'bg-white/90',
+    toolbarText: 'text-gray-600',
+    toolbarHover: 'hover:bg-gray-100',
+    toolbarBorder: 'border-gray-200',
+    sidebarBg: 'bg-white',
+    sidebarText: 'text-gray-700',
+    sidebarHover: 'hover:bg-gray-50',
+    sidebarBorder: 'border-gray-200',
+    progressBg: 'bg-gray-200',
+    progressText: 'text-gray-400',
+  },
+  {
+    name: 'sepia',
+    label: '护眼',
+    bg: 'bg-amber-50',
+    text: 'text-amber-900',
+    toolbarBg: 'bg-amber-50/90',
+    toolbarText: 'text-amber-700',
+    toolbarHover: 'hover:bg-amber-100',
+    toolbarBorder: 'border-amber-200',
+    sidebarBg: 'bg-amber-50',
+    sidebarText: 'text-amber-800',
+    sidebarHover: 'hover:bg-amber-100',
+    sidebarBorder: 'border-amber-200',
+    progressBg: 'bg-amber-200',
+    progressText: 'text-amber-500',
+  },
+  {
+    name: 'green',
+    label: '绿色',
+    bg: 'bg-green-50',
+    text: 'text-green-900',
+    toolbarBg: 'bg-green-50/90',
+    toolbarText: 'text-green-700',
+    toolbarHover: 'hover:bg-green-100',
+    toolbarBorder: 'border-green-200',
+    sidebarBg: 'bg-green-50',
+    sidebarText: 'text-green-800',
+    sidebarHover: 'hover:bg-green-100',
+    sidebarBorder: 'border-green-200',
+    progressBg: 'bg-green-200',
+    progressText: 'text-green-500',
+  },
+  {
+    name: 'dark',
+    label: '夜间',
+    bg: 'bg-gray-950',
+    text: 'text-gray-200',
+    toolbarBg: 'bg-gray-950/90',
+    toolbarText: 'text-gray-400',
+    toolbarHover: 'hover:bg-gray-800',
+    toolbarBorder: 'border-gray-800',
+    sidebarBg: 'bg-gray-950',
+    sidebarText: 'text-gray-300',
+    sidebarHover: 'hover:bg-gray-900',
+    sidebarBorder: 'border-gray-800',
+    progressBg: 'bg-gray-800',
+    progressText: 'text-gray-600',
+  },
+];
 
 export function ReaderOverlay() {
   const {
@@ -25,6 +103,14 @@ export function ReaderOverlay() {
   const [themeIdx, setThemeIdx] = useState(0);
   const [showToolbar, setShowToolbar] = useState(true);
   const [showChapterList, setShowChapterList] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('opennovel-reader-theme');
+    if (saved) {
+      const idx = THEMES.findIndex(t => t.name === saved);
+      if (idx >= 0) setThemeIdx(idx);
+    }
+  }, []);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -60,6 +146,12 @@ export function ReaderOverlay() {
     setShowChapterList(false);
   }, []);
 
+  const handleThemeChange = useCallback((idx: number) => {
+    const newIdx = idx % THEMES.length;
+    setThemeIdx(newIdx);
+    localStorage.setItem('opennovel-reader-theme', THEMES[newIdx].name);
+  }, []);
+
   if (!isOpen) return null;
 
   const theme = THEMES[themeIdx];
@@ -71,28 +163,28 @@ export function ReaderOverlay() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[100] flex flex-col"
+        className={`fixed inset-0 z-[100] flex flex-col ${theme.bg} ${theme.text}`}
       >
         {showToolbar && (
           <motion.div
             initial={{ y: -60 }}
             animate={{ y: 0 }}
-            className="flex items-center justify-between px-4 py-3 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 z-10"
+            className={`flex items-center justify-between px-4 py-3 ${theme.toolbarBg} backdrop-blur-md border-b ${theme.toolbarBorder} z-10`}
           >
-            <button onClick={closeReader} className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-gray-600 dark:text-gray-300">
+            <button onClick={closeReader} className={`p-1.5 ${theme.toolbarHover} rounded-lg ${theme.toolbarText}`}>
               <X className="w-5 h-5" />
             </button>
             <div className="flex-1 text-center px-4 min-w-0">
-              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+              <p className={`text-sm font-medium ${theme.text} truncate`}>
                 {novel?.title}
               </p>
-              <p className="text-xs text-gray-400 dark:text-gray-500 truncate">
+              <p className={`text-xs ${theme.progressText} truncate`}>
                 第{chapter?.chapter_number}章 {chapter?.title}
               </p>
             </div>
             <button
               onClick={() => setShowChapterList(!showChapterList)}
-              className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-gray-600 dark:text-gray-300"
+              className={`p-1.5 ${theme.toolbarHover} rounded-lg ${theme.toolbarText}`}
             >
               <List className="w-5 h-5" />
             </button>
@@ -100,7 +192,7 @@ export function ReaderOverlay() {
         )}
 
         <div
-          className={`flex-1 overflow-y-auto ${theme.bg} ${theme.text} scrollbar-thin`}
+          className="flex-1 overflow-y-auto scrollbar-thin"
           onClick={handleToggleToolbar}
         >
           <div className="max-w-2xl mx-auto px-6 py-8" style={{ fontSize }}>
@@ -117,14 +209,14 @@ export function ReaderOverlay() {
           <motion.div
             initial={{ y: 60 }}
             animate={{ y: 0 }}
-            className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border-t border-gray-200 dark:border-gray-700 z-10"
+            className={`${theme.toolbarBg} backdrop-blur-md border-t ${theme.toolbarBorder} z-10`}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-4 py-2 max-w-2xl mx-auto">
               <button
                 onClick={goPrev}
                 disabled={!hasPrev}
-                className="flex items-center gap-1 px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                className={`flex items-center gap-1 px-3 py-2 text-sm ${theme.toolbarText} ${theme.toolbarHover} rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-colors`}
               >
                 <ChevronLeft className="w-4 h-4" />
                 上一章
@@ -134,7 +226,7 @@ export function ReaderOverlay() {
                 <button
                   onClick={() => setFontSizeIdx(Math.max(0, fontSizeIdx - 1))}
                   disabled={fontSizeIdx === 0}
-                  className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg disabled:opacity-30 text-gray-600 dark:text-gray-300"
+                  className={`p-1.5 ${theme.toolbarHover} rounded-lg disabled:opacity-30 ${theme.toolbarText}`}
                 >
                   <Type className="w-4 h-4" />
                   <span className="text-[10px] ml-0.5">A-</span>
@@ -142,15 +234,15 @@ export function ReaderOverlay() {
                 <button
                   onClick={() => setFontSizeIdx(Math.min(FONT_SIZES.length - 1, fontSizeIdx + 1))}
                   disabled={fontSizeIdx === FONT_SIZES.length - 1}
-                  className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg disabled:opacity-30 text-gray-600 dark:text-gray-300"
+                  className={`p-1.5 ${theme.toolbarHover} rounded-lg disabled:opacity-30 ${theme.toolbarText}`}
                 >
                   <Type className="w-5 h-5" />
                   <span className="text-[10px] ml-0.5">A+</span>
                 </button>
                 <button
-                  onClick={() => setThemeIdx((themeIdx + 1) % THEMES.length)}
-                  className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-gray-600 dark:text-gray-300"
-                  title="切换阅读主题"
+                  onClick={() => handleThemeChange(themeIdx + 1)}
+                  className={`p-1.5 ${theme.toolbarHover} rounded-lg ${theme.toolbarText}`}
+                  title={`切换阅读主题 (${theme.label})`}
                 >
                   {themeIdx === THEMES.length - 1 ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
                 </button>
@@ -159,7 +251,7 @@ export function ReaderOverlay() {
               <button
                 onClick={goNext}
                 disabled={!hasNext}
-                className="flex items-center gap-1 px-3 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                className={`flex items-center gap-1 px-3 py-2 text-sm ${theme.toolbarText} ${theme.toolbarHover} rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-colors`}
               >
                 下一章
                 <ChevronRight className="w-4 h-4" />
@@ -167,7 +259,7 @@ export function ReaderOverlay() {
             </div>
 
             <div className="px-4 pb-2">
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1">
+              <div className={`w-full ${theme.progressBg} rounded-full h-1`}>
                 <div
                   className="bg-purple-500 h-1 rounded-full transition-all"
                   style={{
@@ -177,7 +269,7 @@ export function ReaderOverlay() {
                   }}
                 />
               </div>
-              <p className="text-[10px] text-gray-400 dark:text-gray-500 text-center mt-1">
+              <p className={`text-[10px] ${theme.progressText} text-center mt-1`}>
                 {chapterIndex + 1} / {novel?.chapters.length ?? 0}
               </p>
             </div>
@@ -198,12 +290,12 @@ export function ReaderOverlay() {
                 animate={{ x: 0 }}
                 exit={{ x: '100%' }}
                 transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                className="absolute right-0 top-0 bottom-0 w-72 sm:w-80 bg-white dark:bg-gray-900 shadow-xl overflow-y-auto scrollbar-thin"
+                className={`absolute right-0 top-0 bottom-0 w-72 sm:w-80 ${theme.sidebarBg} shadow-xl overflow-y-auto scrollbar-thin`}
                 onClick={(e) => e.stopPropagation()}
               >
-                <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                  <h3 className="font-bold text-gray-900 dark:text-white">章节列表</h3>
-                  <p className="text-xs text-gray-400 mt-1">{novel.chapters.length} 章</p>
+                <div className={`p-4 border-b ${theme.sidebarBorder}`}>
+                  <h3 className={`font-bold ${theme.text}`}>章节列表</h3>
+                  <p className={`text-xs ${theme.progressText} mt-1`}>{novel.chapters.length} 章</p>
                 </div>
                 <div className="py-2">
                   {[...novel.chapters]
@@ -218,7 +310,7 @@ export function ReaderOverlay() {
                         className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
                           i === chapterIndex
                             ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300'
-                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+                            : `${theme.sidebarText} ${theme.sidebarHover}`
                         }`}
                       >
                         第{ch.chapter_number}章 {ch.title}
