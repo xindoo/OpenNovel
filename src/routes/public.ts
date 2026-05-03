@@ -35,7 +35,7 @@ publicRouter.get('/categories', async (c) => {
     data: categories
   };
 
-  c.header('Cache-Control', 'public, max-age=3600');
+  c.header('Cache-Control', 'public, max-age=60');
   return c.json(response);
 });
 
@@ -58,7 +58,9 @@ publicRouter.get('/novels', async (c) => {
   let params: (string | number)[] = [];
 
   if (category) {
-    whereClause = ' WHERE category = ? OR category LIKE ? OR category LIKE ? OR category LIKE ?';
+    // Normalize Chinese commas to English commas for consistent matching,
+    // since category strings may use either separator
+    whereClause = ' WHERE REPLACE(category, \'，\', \',\') = ? OR REPLACE(category, \'，\', \',\') LIKE ? OR REPLACE(category, \'，\', \',\') LIKE ? OR REPLACE(category, \'，\', \',\') LIKE ?';
     params.push(category, `${category},%`, `%,${category}`, `%,${category},%`);
   }
 
@@ -230,9 +232,9 @@ publicRouter.get('/novels/:id/chapters/:chapterId', async (c) => {
   return c.json(response);
 });
 
-// GET /api/storage/*key - Serve image/asset from R2 with proper content-type
-publicRouter.get('/storage/*key', async (c) => {
-  const key = decodeURIComponent(c.req.param('key')?.replace(/^\/+/, '') || '');
+// GET /api/storage/:key - Serve image/asset from R2 with proper content-type
+publicRouter.get('/storage/:key{.+}', async (c) => {
+  const key = decodeURIComponent(c.req.param('key') || '');
 
   if (!key) {
     const response: ApiResponse = {
@@ -255,8 +257,9 @@ publicRouter.get('/storage/*key', async (c) => {
   // Create headers from R2 httpMetadata
   const headers = new Headers();
 
-  if (object.httpMetadata?.contentType) {
-    headers.set('Content-Type', object.httpMetadata.contentType);
+  const contentType = object.httpMetadata?.contentType || inferContentType(key);
+  if (contentType) {
+    headers.set('Content-Type', contentType);
   }
 
   if (object.httpMetadata?.contentEncoding) {
@@ -265,6 +268,8 @@ publicRouter.get('/storage/*key', async (c) => {
 
   if (object.httpMetadata?.cacheControl) {
     headers.set('Cache-Control', object.httpMetadata.cacheControl);
+  } else {
+    headers.set('Cache-Control', 'public, max-age=86400');
   }
 
   headers.set('Access-Control-Allow-Origin', '*');
@@ -278,5 +283,24 @@ publicRouter.get('/storage/*key', async (c) => {
     headers
   });
 });
+
+function inferContentType(key: string): string | undefined {
+  const ext = key.split('.').pop()?.toLowerCase();
+  const mimeTypes: Record<string, string> = {
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'png': 'image/png',
+    'gif': 'image/gif',
+    'webp': 'image/webp',
+    'svg': 'image/svg+xml',
+    'avif': 'image/avif',
+    'md': 'text/markdown; charset=utf-8',
+    'txt': 'text/plain; charset=utf-8',
+    'json': 'application/json',
+    'css': 'text/css',
+    'js': 'application/javascript',
+  };
+  return ext ? mimeTypes[ext] : undefined;
+}
 
 export default publicRouter;
