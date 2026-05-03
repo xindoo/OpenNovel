@@ -1,13 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronLeft, ChevronRight, List, Type, Sun, Moon } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, List, Type, Sun, Moon, BookOpen, TextAlignJustify } from 'lucide-react';
 import { useReader } from '../components/ReaderContext';
+import { PageFlipReader } from './PageFlipReader';
 import { useRecentReads } from '../hooks/useRecentReads';
 import { getStorageUrl } from '../api';
 
 const FONT_SIZES = [14, 16, 18, 20, 22] as const;
 
-interface ReadingTheme {
+export interface ReadingTheme {
   name: string;
   label: string;
   bg: string;
@@ -96,6 +97,8 @@ export function ReaderOverlay() {
     isOpen, novel, chapter, content,
     closeReader, goNext, goPrev, hasNext, hasPrev,
     goToChapter, chapterIndex,
+    readingMode, setReadingMode, pageNext, pagePrev,
+    currentPage, totalPages,
   } = useReader();
   const { addRecentRead } = useRecentReads();
 
@@ -116,8 +119,13 @@ export function ReaderOverlay() {
     if (!isOpen) return;
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') closeReader();
-      if (e.key === 'ArrowLeft' && hasPrev) goPrev();
-      if (e.key === 'ArrowRight' && hasNext) goNext();
+      if (readingMode === 'page') {
+        if (e.key === 'ArrowLeft') pagePrev();
+        if (e.key === 'ArrowRight') pageNext();
+      } else {
+        if (e.key === 'ArrowLeft' && hasPrev) goPrev();
+        if (e.key === 'ArrowRight' && hasNext) goNext();
+      }
     };
     window.addEventListener('keydown', handleKey);
     document.body.style.overflow = 'hidden';
@@ -125,7 +133,7 @@ export function ReaderOverlay() {
       window.removeEventListener('keydown', handleKey);
       document.body.style.overflow = '';
     };
-  }, [isOpen, hasPrev, hasNext, closeReader, goPrev, goNext]);
+  }, [isOpen, hasPrev, hasNext, closeReader, goPrev, goNext, readingMode, pageNext, pagePrev]);
 
   useEffect(() => {
     if (isOpen && novel && chapter) {
@@ -191,19 +199,28 @@ export function ReaderOverlay() {
           </motion.div>
         )}
 
-        <div
-          className="flex-1 overflow-y-auto scrollbar-thin"
-          onClick={handleToggleToolbar}
-        >
-          <div className="max-w-2xl mx-auto px-6 py-8" style={{ fontSize }}>
-            <h2 className="text-lg font-bold mb-6 text-center opacity-80">
-              第{chapter?.chapter_number}章 {chapter?.title}
-            </h2>
-            <div className="leading-[1.8] whitespace-pre-wrap break-words">
-              {content || '加载中...'}
+        {readingMode === 'page' ? (
+          <PageFlipReader
+            theme={theme}
+            fontSize={fontSize}
+            showToolbar={showToolbar}
+            onToggleToolbar={handleToggleToolbar}
+          />
+        ) : (
+          <div
+            className="flex-1 overflow-y-auto scrollbar-thin"
+            onClick={handleToggleToolbar}
+          >
+            <div className="max-w-2xl mx-auto px-6 py-8" style={{ fontSize }}>
+              <h2 className="text-lg font-bold mb-6 text-center opacity-80">
+                第{chapter?.chapter_number}章 {chapter?.title}
+              </h2>
+              <div className="leading-[1.8] whitespace-pre-wrap break-words">
+                {content || '加载中...'}
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {showToolbar && (
           <motion.div
@@ -240,6 +257,13 @@ export function ReaderOverlay() {
                   <span className="text-[10px] ml-0.5">A+</span>
                 </button>
                 <button
+                  onClick={() => setReadingMode(readingMode === 'page' ? 'scroll' : 'page')}
+                  className={`p-1.5 ${theme.toolbarHover} rounded-lg ${theme.toolbarText}`}
+                  title={`切换阅读模式 (${readingMode === 'page' ? '翻页' : '滚动'})`}
+                >
+                  {readingMode === 'page' ? <BookOpen className="w-4 h-4" /> : <TextAlignJustify className="w-4 h-4" />}
+                </button>
+                <button
                   onClick={() => handleThemeChange(themeIdx + 1)}
                   className={`p-1.5 ${theme.toolbarHover} rounded-lg ${theme.toolbarText}`}
                   title={`切换阅读主题 (${theme.label})`}
@@ -272,6 +296,11 @@ export function ReaderOverlay() {
               <p className={`text-[10px] ${theme.progressText} text-center mt-1`}>
                 {chapterIndex + 1} / {novel?.chapters.length ?? 0}
               </p>
+              {readingMode === 'page' && (
+                <p className={`text-[10px] ${theme.progressText} text-center mt-1`}>
+                  第{currentPage + 1}页 / 共{totalPages}页
+                </p>
+              )}
             </div>
           </motion.div>
         )}
