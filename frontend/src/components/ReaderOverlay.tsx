@@ -100,7 +100,6 @@ export function ReaderOverlay() {
     closeReader, goNext, goPrev, hasNext, hasPrev,
     goToChapter, chapterIndex,
     readingMode, setReadingMode, pageNext, pagePrev,
-    currentPage, totalPages,
   } = useReader();
   const { addRecentRead } = useRecentReads();
 
@@ -375,11 +374,7 @@ export function ReaderOverlay() {
               <p className={`text-[10px] ${theme.progressText} text-center mt-1`}>
                 {chapterIndex + 1} / {novel?.chapters.length ?? 0}
               </p>
-              {readingMode === 'page' && (
-                <p className={`text-[10px] ${theme.progressText} text-center mt-1`}>
-                  第{currentPage + 1}页 / 共{totalPages}页
-                </p>
-              )}
+
             </div>
           </motion.div>
         )}

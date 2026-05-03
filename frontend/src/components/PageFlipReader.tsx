@@ -176,9 +176,6 @@ export function PageFlipReader({ theme, fontSize, onToggleToolbar }: PageFlipRea
             </motion.div>
           </AnimatePresence>
         </div>
-        <div className={`text-center text-xs ${theme.progressText} py-1`}>
-          第{currentPage + 1}页 / 共{totalPages}页
-        </div>
       </div>
     </div>
   );
