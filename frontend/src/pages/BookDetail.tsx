@@ -12,7 +12,7 @@ export function BookDetail() {
   const navigate = useNavigate();
   const [novel, setNovel] = useState<NovelWithChapters | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showChapters, setShowChapters] = useState(false);
+  const [showChapters, setShowChapters] = useState(true);
   const { openReader } = useReader();
   const { isFavorite, toggleFavorite } = useFavorites();
   const { addRecentRead } = useRecentReads();
