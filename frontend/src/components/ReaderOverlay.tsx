@@ -100,6 +100,7 @@ export function ReaderOverlay() {
     closeReader, goNext, goPrev, hasNext, hasPrev,
     goToChapter, chapterIndex,
     readingMode, setReadingMode, pageNext, pagePrev,
+    currentPage, totalPages, setPageInfo,
   } = useReader();
   const { addRecentRead } = useRecentReads();
 
@@ -110,8 +111,12 @@ export function ReaderOverlay() {
 
   const { getBookmarksForNovel, addBookmark, removeBookmark, isBookmarked } = useBookmarks();
   const [sidebarTab, setSidebarTab] = useState<'chapters' | 'bookmarks'>('chapters');
-  const [currentScrollPercent, setCurrentScrollPercent] = useState(0);
+  const [scrollModePercent, setScrollModePercent] = useState(0);
   const contentRef = useRef<HTMLDivElement>(null);
+
+  const currentScrollPercent = readingMode === 'page'
+    ? (totalPages > 1 ? Math.round((currentPage / (totalPages - 1)) * 100 * 10) / 10 : 0)
+    : scrollModePercent;
 
   useEffect(() => {
     const saved = localStorage.getItem('opennovel-reader-theme');
@@ -161,12 +166,12 @@ export function ReaderOverlay() {
 
     const handleScroll = () => {
       const scrollPercent = el.scrollTop / (el.scrollHeight - el.clientHeight) * 100;
-      setCurrentScrollPercent(Math.round(scrollPercent * 10) / 10);
+      setScrollModePercent(Math.round(scrollPercent * 10) / 10);
     };
 
     el.addEventListener('scroll', handleScroll, { passive: true });
     return () => el.removeEventListener('scroll', handleScroll);
-  }, [isOpen]);
+  }, [isOpen, readingMode]);
 
   const handleToggleToolbar = useCallback(() => {
     setShowToolbar(prev => !prev);
@@ -182,16 +187,25 @@ export function ReaderOverlay() {
   const handleToggleBookmark = useCallback(() => {
     if (!novel || !chapter) return;
 
-    const el = contentRef.current;
-    if (!el) return;
+    const scrollPercent = currentScrollPercent;
 
-    const scrollPercent = Math.round((el.scrollTop / (el.scrollHeight - el.clientHeight)) * 100 * 10) / 10;
-
-    const textContent = el.textContent || '';
-    const charPosition = Math.floor((scrollPercent / 100) * textContent.length);
-    const start = Math.max(0, charPosition - 30);
-    const end = Math.min(textContent.length, charPosition + 30);
-    const surroundingText = textContent.slice(start, end);
+    let surroundingText = '';
+    if (readingMode === 'scroll') {
+      const el = contentRef.current;
+      if (el) {
+        const textContent = el.textContent || '';
+        const charPosition = Math.floor((scrollPercent / 100) * textContent.length);
+        const start = Math.max(0, charPosition - 30);
+        const end = Math.min(textContent.length, charPosition + 30);
+        surroundingText = textContent.slice(start, end);
+      }
+    } else {
+      const textContent = content || '';
+      const charPosition = Math.floor((scrollPercent / 100) * textContent.length);
+      const start = Math.max(0, charPosition - 30);
+      const end = Math.min(textContent.length, charPosition + 30);
+      surroundingText = textContent.slice(start, end);
+    }
 
     if (isBookmarked(novel.id, chapter.id, scrollPercent)) {
       removeBookmark(novel.id, chapter.id, scrollPercent);
@@ -205,7 +219,7 @@ export function ReaderOverlay() {
         surroundingText,
       });
     }
-  }, [novel, chapter, isBookmarked, addBookmark, removeBookmark]);
+  }, [novel, chapter, currentScrollPercent, readingMode, content, isBookmarked, addBookmark, removeBookmark]);
 
   const handleBookmarkClick = useCallback(async (bookmark: BookmarkItem) => {
     if (!novel) return;
@@ -213,19 +227,31 @@ export function ReaderOverlay() {
     const chIndex = novel.chapters.findIndex(ch => ch.id === bookmark.chapterId);
     if (chIndex === -1) return;
 
-    if (chapterIndex !== chIndex) {
+    const chapterChanged = chapterIndex !== chIndex;
+
+    if (chapterChanged) {
       await goToChapter(chIndex);
     }
 
-    setTimeout(() => {
-      const el = contentRef.current;
-      if (!el) return;
-      const targetScroll = (bookmark.scrollPercent / 100) * (el.scrollHeight - el.clientHeight);
-      el.scrollTo({ top: targetScroll, behavior: 'smooth' });
-    }, chapterIndex !== chIndex ? 500 : 0);
+    if (readingMode === 'page' && totalPages > 1) {
+      const targetPage = Math.round((bookmark.scrollPercent / 100) * (totalPages - 1));
+      if (chapterChanged) {
+        setTimeout(() => setPageInfo(targetPage, totalPages), 100);
+      } else {
+        setPageInfo(targetPage, totalPages);
+      }
+    } else {
+      const delay = chapterChanged ? 500 : 0;
+      setTimeout(() => {
+        const el = contentRef.current;
+        if (!el) return;
+        const targetScroll = (bookmark.scrollPercent / 100) * (el.scrollHeight - el.clientHeight);
+        el.scrollTo({ top: targetScroll, behavior: 'smooth' });
+      }, delay);
+    }
 
     setShowChapterList(false);
-  }, [novel, chapterIndex, goToChapter]);
+  }, [novel, chapterIndex, readingMode, totalPages, goToChapter, setPageInfo]);
 
   if (!isOpen) return null;
 
