@@ -41,7 +41,7 @@ export function PageFlipReader({ theme, fontSize, onToggleToolbar }: PageFlipRea
     const update = () => {
       setDims({
         width: Math.max(0, el.clientWidth - 48),
-        height: Math.max(0, el.clientHeight - 64),
+        height: Math.max(0, el.clientHeight - 24),
       });
     };
 
@@ -141,11 +141,11 @@ export function PageFlipReader({ theme, fontSize, onToggleToolbar }: PageFlipRea
     >
       <div
         ref={containerRef}
-        className="max-w-2xl mx-auto px-6 py-8 h-full flex flex-col"
+        className="max-w-2xl mx-auto px-6 py-3 h-full flex flex-col"
         style={{ fontSize }}
       >
         {currentPage === 0 && (
-          <h2 className="text-lg font-bold mb-6 text-center opacity-80">
+          <h2 className="text-lg font-bold mb-2 text-center opacity-80">
             第{chapter?.chapter_number}章 {chapter?.title}
           </h2>
         )}
@@ -176,7 +176,7 @@ export function PageFlipReader({ theme, fontSize, onToggleToolbar }: PageFlipRea
             </motion.div>
           </AnimatePresence>
         </div>
-        <div className={`text-center text-xs ${theme.progressText} py-2`}>
+        <div className={`text-center text-xs ${theme.progressText} py-1`}>
           第{currentPage + 1}页 / 共{totalPages}页
         </div>
       </div>

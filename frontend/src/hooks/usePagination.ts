@@ -78,7 +78,7 @@ export function usePagination({
     const result: string[] = [];
     let currentPageParagraphs: string[] = [];
     let currentHeight = 0;
-    const verticalPadding = 64;
+    const verticalPadding = 16;
     const availableHeight = containerHeight - verticalPadding;
     const blankLineHeight = fontSize * lineHeight;
 

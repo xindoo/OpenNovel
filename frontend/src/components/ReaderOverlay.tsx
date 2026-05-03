@@ -280,8 +280,8 @@ export function ReaderOverlay() {
             className="flex-1 overflow-y-auto scrollbar-thin"
             onClick={handleToggleToolbar}
           >
-            <div className="max-w-2xl mx-auto px-6 py-8" style={{ fontSize }}>
-              <h2 className="text-lg font-bold mb-6 text-center opacity-80">
+            <div className="max-w-2xl mx-auto px-6 py-3" style={{ fontSize }}>
+              <h2 className="text-lg font-bold mb-2 text-center opacity-80">
                 第{chapter?.chapter_number}章 {chapter?.title}
               </h2>
               <div className="leading-[1.8] whitespace-pre-wrap break-words">
@@ -298,17 +298,17 @@ export function ReaderOverlay() {
             className={`${theme.toolbarBg} backdrop-blur-md border-t ${theme.toolbarBorder} z-10`}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-4 py-2 max-w-2xl mx-auto">
+            <div className="flex items-center justify-between px-2 py-2 max-w-2xl mx-auto">
               <button
                 onClick={goPrev}
                 disabled={!hasPrev}
-                className={`flex items-center gap-1 px-3 py-2 text-sm ${theme.toolbarText} ${theme.toolbarHover} rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-colors`}
+                className={`flex items-center gap-1 px-2 py-2 text-sm whitespace-nowrap shrink-0 ${theme.toolbarText} ${theme.toolbarHover} rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-colors`}
               >
-                <ChevronLeft className="w-4 h-4" />
+                <ChevronLeft className="w-4 h-4 shrink-0" />
                 上一章
               </button>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1 sm:gap-3 min-w-0">
                 <button
                   onClick={handleToggleBookmark}
                   className={`p-1.5 ${theme.toolbarHover} rounded-lg ${theme.toolbarText}`}
@@ -354,10 +354,10 @@ export function ReaderOverlay() {
               <button
                 onClick={goNext}
                 disabled={!hasNext}
-                className={`flex items-center gap-1 px-3 py-2 text-sm ${theme.toolbarText} ${theme.toolbarHover} rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-colors`}
+                className={`flex items-center gap-1 px-2 py-2 text-sm whitespace-nowrap shrink-0 ${theme.toolbarText} ${theme.toolbarHover} rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-colors`}
               >
                 下一章
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="w-4 h-4 shrink-0" />
               </button>
             </div>
 
