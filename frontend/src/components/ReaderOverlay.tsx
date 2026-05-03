@@ -1,8 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronLeft, ChevronRight, List, Type, Sun, Moon } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, List, Type, Sun, Moon, Bookmark, BookmarkCheck } from 'lucide-react';
 import { useReader } from '../components/ReaderContext';
 import { useRecentReads } from '../hooks/useRecentReads';
+import { useBookmarks } from '../hooks/useBookmarks';
+import type { BookmarkItem } from '../hooks/useBookmarks';
 import { getStorageUrl } from '../api';
 
 const FONT_SIZES = [14, 16, 18, 20, 22] as const;
@@ -104,6 +106,11 @@ export function ReaderOverlay() {
   const [showToolbar, setShowToolbar] = useState(true);
   const [showChapterList, setShowChapterList] = useState(false);
 
+  const { getBookmarksForNovel, addBookmark, removeBookmark, isBookmarked } = useBookmarks();
+  const [sidebarTab, setSidebarTab] = useState<'chapters' | 'bookmarks'>('chapters');
+  const [currentScrollPercent, setCurrentScrollPercent] = useState(0);
+  const contentRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const saved = localStorage.getItem('opennovel-reader-theme');
     if (saved) {
@@ -141,6 +148,19 @@ export function ReaderOverlay() {
     }
   }, [isOpen, novel, chapter, addRecentRead]);
 
+  useEffect(() => {
+    const el = contentRef.current;
+    if (!el || !isOpen) return;
+
+    const handleScroll = () => {
+      const scrollPercent = el.scrollTop / (el.scrollHeight - el.clientHeight) * 100;
+      setCurrentScrollPercent(Math.round(scrollPercent * 10) / 10);
+    };
+
+    el.addEventListener('scroll', handleScroll, { passive: true });
+    return () => el.removeEventListener('scroll', handleScroll);
+  }, [isOpen]);
+
   const handleToggleToolbar = useCallback(() => {
     setShowToolbar(prev => !prev);
     setShowChapterList(false);
@@ -151,6 +171,54 @@ export function ReaderOverlay() {
     setThemeIdx(newIdx);
     localStorage.setItem('opennovel-reader-theme', THEMES[newIdx].name);
   }, []);
+
+  const handleToggleBookmark = useCallback(() => {
+    if (!novel || !chapter) return;
+
+    const el = contentRef.current;
+    if (!el) return;
+
+    const scrollPercent = Math.round((el.scrollTop / (el.scrollHeight - el.clientHeight)) * 100 * 10) / 10;
+
+    const textContent = el.textContent || '';
+    const charPosition = Math.floor((scrollPercent / 100) * textContent.length);
+    const start = Math.max(0, charPosition - 30);
+    const end = Math.min(textContent.length, charPosition + 30);
+    const surroundingText = textContent.slice(start, end);
+
+    if (isBookmarked(novel.id, chapter.id, scrollPercent)) {
+      removeBookmark(novel.id, chapter.id, scrollPercent);
+    } else {
+      addBookmark({
+        novelId: novel.id,
+        chapterId: chapter.id,
+        chapterNumber: chapter.chapter_number,
+        chapterTitle: chapter.title,
+        scrollPercent,
+        surroundingText,
+      });
+    }
+  }, [novel, chapter, isBookmarked, addBookmark, removeBookmark]);
+
+  const handleBookmarkClick = useCallback(async (bookmark: BookmarkItem) => {
+    if (!novel) return;
+
+    const chIndex = novel.chapters.findIndex(ch => ch.id === bookmark.chapterId);
+    if (chIndex === -1) return;
+
+    if (chapterIndex !== chIndex) {
+      await goToChapter(chIndex);
+    }
+
+    setTimeout(() => {
+      const el = contentRef.current;
+      if (!el) return;
+      const targetScroll = (bookmark.scrollPercent / 100) * (el.scrollHeight - el.clientHeight);
+      el.scrollTo({ top: targetScroll, behavior: 'smooth' });
+    }, chapterIndex !== chIndex ? 500 : 0);
+
+    setShowChapterList(false);
+  }, [novel, chapterIndex, goToChapter]);
 
   if (!isOpen) return null;
 
@@ -183,7 +251,7 @@ export function ReaderOverlay() {
               </p>
             </div>
             <button
-              onClick={() => setShowChapterList(!showChapterList)}
+              onClick={() => { setShowChapterList(!showChapterList); if (!showChapterList) setSidebarTab('chapters'); }}
               className={`p-1.5 ${theme.toolbarHover} rounded-lg ${theme.toolbarText}`}
             >
               <List className="w-5 h-5" />
@@ -192,6 +260,7 @@ export function ReaderOverlay() {
         )}
 
         <div
+          ref={contentRef}
           className="flex-1 overflow-y-auto scrollbar-thin"
           onClick={handleToggleToolbar}
         >
@@ -223,6 +292,16 @@ export function ReaderOverlay() {
               </button>
 
               <div className="flex items-center gap-3">
+                <button
+                  onClick={handleToggleBookmark}
+                  className={`p-1.5 ${theme.toolbarHover} rounded-lg ${theme.toolbarText}`}
+                  title="添加书签"
+                >
+                  {novel && chapter && isBookmarked(novel.id, chapter.id, currentScrollPercent)
+                    ? <BookmarkCheck className="w-4 h-4 text-purple-500" />
+                    : <Bookmark className="w-4 h-4" />
+                  }
+                </button>
                 <button
                   onClick={() => setFontSizeIdx(Math.max(0, fontSizeIdx - 1))}
                   disabled={fontSizeIdx === 0}
@@ -294,9 +373,33 @@ export function ReaderOverlay() {
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className={`p-4 border-b ${theme.sidebarBorder}`}>
-                  <h3 className={`font-bold ${theme.text}`}>章节列表</h3>
-                  <p className={`text-xs ${theme.progressText} mt-1`}>{novel.chapters.length} 章</p>
+                  <div className="flex gap-1 mb-2">
+                    <button
+                      onClick={() => setSidebarTab('chapters')}
+                      className={`flex-1 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                        sidebarTab === 'chapters'
+                          ? 'bg-purple-100 text-purple-700'
+                          : `${theme.sidebarText} ${theme.sidebarHover}`
+                      }`}
+                    >
+                      章节列表
+                    </button>
+                    <button
+                      onClick={() => setSidebarTab('bookmarks')}
+                      className={`flex-1 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                        sidebarTab === 'bookmarks'
+                          ? 'bg-purple-100 text-purple-700'
+                          : `${theme.sidebarText} ${theme.sidebarHover}`
+                      }`}
+                    >
+                      书签{novel ? ` (${getBookmarksForNovel(novel.id).length})` : ''}
+                    </button>
+                  </div>
+                  {sidebarTab === 'chapters' && (
+                    <p className={`text-xs ${theme.progressText}`}>{novel?.chapters.length ?? 0} 章</p>
+                  )}
                 </div>
+                {sidebarTab === 'chapters' && novel && (
                 <div className="py-2">
                   {[...novel.chapters]
                     .sort((a, b) => a.chapter_number - b.chapter_number)
@@ -317,6 +420,38 @@ export function ReaderOverlay() {
                       </button>
                     ))}
                 </div>
+                )}
+                {sidebarTab === 'bookmarks' && novel && (
+                  <div className="py-2">
+                    {getBookmarksForNovel(novel.id).length === 0 ? (
+                      <div className={`px-4 py-8 text-center text-sm ${theme.progressText}`}>
+                        暂无书签
+                      </div>
+                    ) : (
+                      getBookmarksForNovel(novel.id).map((bm, i) => (
+                        <button
+                          key={`${bm.novelId}-${bm.chapterId}-${bm.scrollPercent}-${i}`}
+                          onClick={() => handleBookmarkClick(bm)}
+                          className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
+                            chapter?.id === bm.chapterId
+                              ? 'bg-purple-50 text-purple-700'
+                              : `${theme.sidebarText} ${theme.sidebarHover}`
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <Bookmark className="w-3 h-3 text-purple-500 flex-shrink-0" />
+                            <span className="font-medium truncate">第{bm.chapterNumber}章 · {bm.scrollPercent.toFixed(0)}%</span>
+                          </div>
+                          {bm.surroundingText && (
+                            <p className={`text-xs mt-1 ${theme.progressText} truncate`}>
+                              {bm.surroundingText}
+                            </p>
+                          )}
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
               </motion.div>
             </motion.div>
           )}
