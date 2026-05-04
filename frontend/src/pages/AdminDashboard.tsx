@@ -11,8 +11,9 @@ import {
   uploadCover, uploadChapters, getStorageUrl,
   clearAdminCredentials,
 } from '../api';
+import { ChapterEditor } from './admin/ChapterEditor';
 
-type Tab = 'novels' | 'edit' | 'upload';
+type Tab = 'novels' | 'edit' | 'upload' | 'chapters';
 
 interface NovelForm {
   title: string;
@@ -228,6 +229,7 @@ export function AdminDashboard() {
           {([
             { key: 'novels' as Tab, label: '小说列表', icon: BookOpen },
             { key: 'edit' as Tab, label: editId ? '编辑小说' : '新建小说', icon: editId ? Edit3 : Plus },
+            { key: 'chapters' as Tab, label: '章节管理', icon: FileText },
             { key: 'upload' as Tab, label: '上传章节', icon: Upload },
           ]).map(tab => (
             <button
@@ -481,6 +483,13 @@ export function AdminDashboard() {
                   </button>
                 </div>
               </div>
+            </motion.div>
+          )}
+
+          {/* ===== CHAPTERS EDITOR TAB ===== */}
+          {activeTab === 'chapters' && (
+            <motion.div key="chapters" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+              <ChapterEditor novels={novels} onUploadClick={openUpload} />
             </motion.div>
           )}
 

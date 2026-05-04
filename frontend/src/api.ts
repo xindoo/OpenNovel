@@ -197,10 +197,16 @@ export async function deleteChapter(
   });
 }
 
+export interface ChapterUpdateData {
+  title?: string;
+  content?: string;
+  chapter_number?: number;
+}
+
 export async function updateChapter(
   novelId: number,
   chapterId: number,
-  data: Partial<Omit<Chapter, 'id' | 'novel_id' | 'created_at' | 'updated_at'>>
+  data: ChapterUpdateData
 ): Promise<ApiResponse<Chapter>> {
   return apiRequest<Chapter>(`/admin/novels/${novelId}/chapters/${chapterId}`, {
     method: 'PUT',
