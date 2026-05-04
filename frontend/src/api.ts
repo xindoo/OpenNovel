@@ -188,6 +188,32 @@ export async function uploadChapters(
   return response.json();
 }
 
+export async function uploadSingleChapter(
+  novelId: number,
+  file: File
+): Promise<ApiResponse<{ uploaded: number }>> {
+  const formData = new FormData();
+  formData.append('chapters', file);
+
+  const headers = getAuthHeaders() as Record<string, string>;
+  delete headers['Content-Type'];
+
+  const response = await fetch(`/api/admin/novels/${novelId}/chapters/upload`, {
+    method: 'POST',
+    headers,
+    body: formData,
+  });
+
+  if (!response.ok) {
+    return {
+      success: false,
+      error: `Failed to upload chapter: ${response.statusText}`
+    };
+  }
+
+  return response.json();
+}
+
 export async function deleteChapter(
   novelId: number,
   chapterId: number
