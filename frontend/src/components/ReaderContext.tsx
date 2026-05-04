@@ -1,7 +1,9 @@
 import { createContext, useContext, useState, useCallback, useRef, type ReactNode } from 'react';
 import type { NovelWithChapters, Chapter } from '../api';
+import { useReaderSettings } from '../hooks/useReaderSettings';
+import type { ReadingMode } from '../hooks/useReaderSettings';
 
-export type ReadingMode = 'page' | 'scroll';
+export type { ReadingMode };
 
 interface ReaderState {
   isOpen: boolean;
@@ -28,12 +30,10 @@ interface ReaderContextValue extends ReaderState {
   pageNext: () => void;
   pagePrev: () => void;
   prefetchNextChapter: () => Promise<void>;
-}
-
-function getInitialReadingMode(): ReadingMode {
-  if (typeof window === 'undefined') return 'page';
-  const stored = localStorage.getItem('opennovel-reading-mode');
-  return stored === 'scroll' ? 'scroll' : 'page';
+  fontSizeIdx: number;
+  themeIdx: number;
+  setFontSizeIdx: (idx: number) => void;
+  setThemeIdx: (idx: number) => void;
 }
 
 const initialState: ReaderState = {
@@ -42,7 +42,7 @@ const initialState: ReaderState = {
   chapter: null,
   chapterIndex: 0,
   content: '',
-  readingMode: getInitialReadingMode(),
+  readingMode: 'page',
   currentPage: 0,
   totalPages: 0,
   lastNavigation: null,
@@ -51,7 +51,11 @@ const initialState: ReaderState = {
 const ReaderContext = createContext<ReaderContextValue | null>(null);
 
 export function ReaderProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<ReaderState>(initialState);
+  const { settings, setReadingMode: persistReadingMode, setFontSizeIdx, setThemeIdx } = useReaderSettings();
+  const [state, setState] = useState<ReaderState>({
+    ...initialState,
+    readingMode: settings.readingMode,
+  });
   const prefetchCache = useRef<Map<number, { chapter: Chapter; content: string }>>(new Map());
 
   const loadChapter = useCallback(async (novel: NovelWithChapters, index: number, resetPage = true) => {
@@ -90,14 +94,14 @@ export function ReaderProvider({ children }: { children: ReactNode }) {
       chapter: novel.chapters[chapterIndex] || null,
       chapterIndex,
       content: '',
-      readingMode: getInitialReadingMode(),
+      readingMode: settings.readingMode,
       currentPage: 0,
       totalPages: 0,
       lastNavigation: null,
     });
     prefetchCache.current.clear();
     await loadChapter(novel, chapterIndex);
-  }, [loadChapter]);
+  }, [loadChapter, settings.readingMode]);
 
   const closeReader = useCallback(() => {
     setState(initialState);
@@ -120,9 +124,9 @@ export function ReaderProvider({ children }: { children: ReactNode }) {
   }, [state.novel, state.chapterIndex, loadChapter]);
 
   const setReadingMode = useCallback((mode: ReadingMode) => {
-    localStorage.setItem('opennovel-reading-mode', mode);
+    persistReadingMode(mode);
     setState(prev => ({ ...prev, readingMode: mode }));
-  }, []);
+  }, [persistReadingMode]);
 
   const setPageInfo = useCallback((current: number, total: number) => {
     setState(prev => ({
@@ -182,6 +186,10 @@ export function ReaderProvider({ children }: { children: ReactNode }) {
     pageNext,
     pagePrev,
     prefetchNextChapter,
+    fontSizeIdx: settings.fontSizeIdx,
+    themeIdx: settings.themeIdx,
+    setFontSizeIdx,
+    setThemeIdx,
   };
 
   return (

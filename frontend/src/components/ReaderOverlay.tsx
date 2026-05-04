@@ -101,11 +101,10 @@ export function ReaderOverlay() {
     goToChapter, chapterIndex,
     readingMode, setReadingMode, pageNext, pagePrev,
     currentPage, totalPages, setPageInfo,
+    fontSizeIdx, themeIdx, setFontSizeIdx, setThemeIdx,
   } = useReader();
   const { addRecentRead } = useRecentReads();
 
-  const [fontSizeIdx, setFontSizeIdx] = useState(1);
-  const [themeIdx, setThemeIdx] = useState(0);
   const [showToolbar, setShowToolbar] = useState(true);
   const [showChapterList, setShowChapterList] = useState(false);
 
@@ -117,14 +116,6 @@ export function ReaderOverlay() {
   const currentScrollPercent = readingMode === 'page'
     ? (totalPages > 1 ? Math.round((currentPage / (totalPages - 1)) * 100 * 10) / 10 : 0)
     : scrollModePercent;
-
-  useEffect(() => {
-    const saved = localStorage.getItem('opennovel-reader-theme');
-    if (saved) {
-      const idx = THEMES.findIndex(t => t.name === saved);
-      if (idx >= 0) setThemeIdx(idx);
-    }
-  }, []);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -179,10 +170,8 @@ export function ReaderOverlay() {
   }, []);
 
   const handleThemeChange = useCallback((idx: number) => {
-    const newIdx = idx % THEMES.length;
-    setThemeIdx(newIdx);
-    localStorage.setItem('opennovel-reader-theme', THEMES[newIdx].name);
-  }, []);
+    setThemeIdx(idx % THEMES.length);
+  }, [setThemeIdx]);
 
   const handleToggleBookmark = useCallback(() => {
     if (!novel || !chapter) return;
