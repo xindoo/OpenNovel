@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import type { ChapterEngagement } from '../api';
 import { likeChapter, unlikeChapter, dislikeChapter, undislikeChapter } from '../api';
 
@@ -28,6 +28,10 @@ export function useChapterEngagement(
   const [likedSet, setLikedSet] = useState<Set<number>>(() => loadSet(LIKED_KEY));
   const [dislikedSet, setDislikedSet] = useState<Set<number>>(() => loadSet(DISLIKED_KEY));
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setEngagement(initialEngagement ?? null);
+  }, [initialEngagement]);
 
   const isLiked = chapterId !== undefined ? likedSet.has(chapterId) : false;
   const isDisliked = chapterId !== undefined ? dislikedSet.has(chapterId) : false;

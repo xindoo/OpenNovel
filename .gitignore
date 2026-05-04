@@ -39,3 +39,5 @@ coverage
 .gstack/
 .assets_mapping
 .worktrees/
+.playwright-mcp
+.docs
