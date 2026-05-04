@@ -9,6 +9,7 @@ import { Favorites } from './pages/Favorites';
 import { BookDetail } from './pages/BookDetail';
 import { AdminLogin } from './pages/AdminLogin';
 import { AdminDashboard } from './pages/AdminDashboard';
+import { NovelEditor } from './pages/admin/NovelEditor';
 import './index.css';
 
 function App() {
@@ -28,6 +29,7 @@ function App() {
           {/* Admin pages — no Layout wrapper */}
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/novel/:id" element={<NovelEditor />} />
         </Routes>
 
         {/* Full-screen reader overlay — rendered by context, not a route */}
