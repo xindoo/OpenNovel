@@ -111,6 +111,10 @@ export function ReaderOverlay() {
   const [showToolbar, setShowToolbar] = useState(true);
   const [showChapterList, setShowChapterList] = useState(false);
 
+  useEffect(() => {
+    if (isOpen) setShowChapterList(false);
+  }, [isOpen]);
+
   const { getBookmarksForNovel, addBookmark, removeBookmark, isBookmarked } = useBookmarks();
   const [sidebarTab, setSidebarTab] = useState<'chapters' | 'bookmarks'>('chapters');
   const [scrollModePercent, setScrollModePercent] = useState(0);

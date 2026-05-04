@@ -33,7 +33,7 @@ export function Home() {
         totalChapters: novel.chapters.length,
       });
     }
-    await openReader(novel, idx);
+    await openReader({ ...novel, chapters: sortedChapters }, idx);
   }, [addRecentRead, openReader]);
 
   useEffect(() => {

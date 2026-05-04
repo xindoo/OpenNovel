@@ -85,7 +85,7 @@ export function BookDetail() {
         totalChapters: novel.chapters.length,
       });
     }
-    await openReader(novel, chapterIndex);
+    await openReader({ ...novel, chapters: sortedChapters }, chapterIndex);
   };
 
   return (

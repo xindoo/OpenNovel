@@ -30,7 +30,7 @@ export function Recent() {
         totalChapters: novel.chapters.length,
       });
     }
-    await openReader(novel, idx);
+    await openReader({ ...novel, chapters: sortedChapters }, idx);
   };
 
   return (
