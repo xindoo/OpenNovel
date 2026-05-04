@@ -1,16 +1,40 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { BookOpen, Sparkles } from 'lucide-react';
-import { getNovels, getCategories, type Novel, type CategoryInfo } from '../api';
+import { getNovels, getNovel, getCategories, type Novel, type CategoryInfo } from '../api';
 import { BookCard } from '../components/BookCard';
 import { useRecentReads } from '../hooks/useRecentReads';
+import { useReader } from '../components/ReaderContext';
 
 export function Home() {
   const [novels, setNovels] = useState<Novel[]>([]);
   const [categories, setCategories] = useState<CategoryInfo[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const { recentReads } = useRecentReads();
+  const { recentReads, addRecentRead } = useRecentReads();
+  const { openReader } = useReader();
+
+  const handleContinueReading = useCallback(async (r: typeof recentReads[number]) => {
+    const res = await getNovel(r.novelId);
+    if (!res.success || !res.data) return;
+    const novel = res.data;
+    const sortedChapters = [...novel.chapters].sort((a, b) => a.chapter_number - b.chapter_number);
+    const chapterIndex = sortedChapters.findIndex(ch => ch.id === r.chapterId);
+    const idx = chapterIndex >= 0 ? chapterIndex : 0;
+    const ch = sortedChapters[idx];
+    if (ch) {
+      addRecentRead({
+        novelId: novel.id,
+        title: novel.title,
+        coverUrl: r.coverUrl,
+        chapterId: ch.id,
+        chapterNumber: ch.chapter_number,
+        chapterTitle: ch.title,
+        totalChapters: novel.chapters.length,
+      });
+    }
+    await openReader(novel, idx);
+  }, [addRecentRead, openReader]);
 
   useEffect(() => {
     async function load() {
@@ -40,7 +64,7 @@ export function Home() {
                 key={r.novelId}
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.98 }}
-                onClick={() => window.location.href = `/novels/${r.novelId}`}
+                onClick={() => handleContinueReading(r)}
                 className="flex-shrink-0 w-28 cursor-pointer"
               >
                 <div className="aspect-[3/4] rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-800 shadow">

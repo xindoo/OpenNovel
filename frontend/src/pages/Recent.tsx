@@ -1,12 +1,37 @@
 import { motion } from 'framer-motion';
 import { Clock, Trash2, BookOpen } from 'lucide-react';
 import { useRecentReads } from '../hooks/useRecentReads';
+import { getNovel } from '../api';
+import { useReader } from '../components/ReaderContext';
 import { useNavigate } from 'react-router-dom';
 
 
 export function Recent() {
-  const { recentReads, removeRecentRead, clearRecentReads } = useRecentReads();
+  const { recentReads, addRecentRead, removeRecentRead, clearRecentReads } = useRecentReads();
+  const { openReader } = useReader();
   const navigate = useNavigate();
+
+  const handleContinueReading = async (r: typeof recentReads[number]) => {
+    const res = await getNovel(r.novelId);
+    if (!res.success || !res.data) return;
+    const novel = res.data;
+    const sortedChapters = [...novel.chapters].sort((a, b) => a.chapter_number - b.chapter_number);
+    const chapterIndex = sortedChapters.findIndex(ch => ch.id === r.chapterId);
+    const idx = chapterIndex >= 0 ? chapterIndex : 0;
+    const ch = sortedChapters[idx];
+    if (ch) {
+      addRecentRead({
+        novelId: novel.id,
+        title: novel.title,
+        coverUrl: r.coverUrl,
+        chapterId: ch.id,
+        chapterNumber: ch.chapter_number,
+        chapterTitle: ch.title,
+        totalChapters: novel.chapters.length,
+      });
+    }
+    await openReader(novel, idx);
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
@@ -52,7 +77,7 @@ export function Recent() {
               >
                 <div
                   className="flex-shrink-0 w-12 h-16 rounded-md overflow-hidden bg-gray-100 dark:bg-gray-700 cursor-pointer"
-                  onClick={() => navigate(`/novels/${record.novelId}`)}
+                  onClick={() => handleContinueReading(record)}
                 >
                   {coverUrl ? (
                     <img src={coverUrl} alt={record.title} className="w-full h-full object-cover" loading="lazy" />
@@ -65,7 +90,7 @@ export function Recent() {
 
                 <div
                   className="flex-1 min-w-0 cursor-pointer"
-                  onClick={() => navigate(`/novels/${record.novelId}`)}
+                  onClick={() => handleContinueReading(record)}
                 >
                   <h3 className="text-sm font-medium text-gray-900 dark:text-white line-clamp-1">
                     {record.title}
