@@ -318,11 +318,18 @@ adminRouter.post('/novels/:id/chapters/upload', async (c) => {
 
   files.sort((a, b) => a.name.localeCompare(b.name));
 
+  // Get current max chapter number to avoid overwriting existing chapters
+  const maxChapter = await c.env.DB.prepare(`
+    SELECT MAX(chapter_number) as max_num FROM chapters WHERE novel_id = ?
+  `).bind(novelId).first<{ max_num: number | null }>();
+
+  const startChapterNumber = (maxChapter?.max_num || 0) + 1;
+
   let uploadedCount = 0;
 
   for (let i = 0; i < files.length; i++) {
     const file = files[i]!;
-    const chapterNumber = i + 1;
+    const chapterNumber = startChapterNumber + i;
 
     let title = file.name.replace(/\.(md|txt)$/, '').replace(/[-_]/g, ' ');
     title = title.replace(/\b\w/g, l => l.toUpperCase());
