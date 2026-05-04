@@ -8,7 +8,7 @@ import {
 import type { Novel } from '../api';
 import {
   listNovelsAdmin, deleteNovel, createNovel, updateNovel,
-  uploadCover, uploadChapters, getStorageUrl,
+  uploadCover, uploadSingleChapter, getStorageUrl,
   clearAdminCredentials,
 } from '../api';
 
@@ -50,6 +50,8 @@ export function AdminDashboard() {
   const [uploadNovelId, setUploadNovelId] = useState<number | null>(null);
   const [uploadFiles, setUploadFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState({ completed: 0, total: 0 });
+  const [uploadFileStatuses, setUploadFileStatuses] = useState<Record<string, 'pending' | 'uploading' | 'done' | 'error'>>({});
   const [uploadError, setUploadError] = useState('');
   const [uploadSuccess, setUploadSuccess] = useState('');
   const [isDragging, setIsDragging] = useState(false);
@@ -184,16 +186,40 @@ export function AdminDashboard() {
     setUploadSuccess('');
 
     const sortedFiles = [...uploadFiles].sort((a, b) => a.name.localeCompare(b.name));
-    const result = await uploadChapters(uploadNovelId, sortedFiles);
+    const total = sortedFiles.length;
+    setUploadProgress({ completed: 0, total });
 
-    if (result.success) {
-      setUploadSuccess(`成功上传 ${sortedFiles.length} 个章节`);
-      setUploadFiles([]);
-      await loadNovels();
-    } else {
-      setUploadError(result.error || '上传失败');
+    const initialStatuses: Record<string, 'pending' | 'uploading' | 'done' | 'error'> = {};
+    sortedFiles.forEach(f => { initialStatuses[f.name] = 'pending'; });
+    setUploadFileStatuses(initialStatuses);
+
+    let errorCount = 0;
+    let completedCount = 0;
+
+    for (const file of sortedFiles) {
+      setUploadFileStatuses(prev => ({ ...prev, [file.name]: 'uploading' }));
+
+      const result = await uploadSingleChapter(uploadNovelId, file);
+
+      if (result.success) {
+        completedCount++;
+        setUploadFileStatuses(prev => ({ ...prev, [file.name]: 'done' }));
+      } else {
+        errorCount++;
+        setUploadFileStatuses(prev => ({ ...prev, [file.name]: 'error' }));
+      }
+
+      setUploadProgress({ completed: completedCount + errorCount, total });
     }
 
+    if (errorCount === 0) {
+      setUploadSuccess(`成功上传 ${total} 个章节`);
+      setUploadFiles([]);
+    } else {
+      setUploadError(`上传完成，${total - errorCount} 个成功，${errorCount} 个失败`);
+    }
+
+    await loadNovels();
     setUploading(false);
   };
 
@@ -536,7 +562,8 @@ export function AdminDashboard() {
                   <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">文件按名称排序作为章节顺序</p>
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="px-4 py-2 text-sm font-medium text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors"
+                    disabled={uploading}
+                    className="px-4 py-2 text-sm font-medium text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg transition-colors"
                   >
                     选择文件
                   </button>
@@ -557,28 +584,61 @@ export function AdminDashboard() {
                       <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
                         已选 {uploadFiles.length} 个文件
                       </p>
-                      <button
-                        onClick={() => setUploadFiles([])}
-                        className="text-xs text-gray-400 hover:text-red-500 transition-colors"
-                      >
-                        清空
-                      </button>
+                      {!uploading && (
+                        <button
+                          onClick={() => setUploadFiles([])}
+                          className="text-xs text-gray-400 hover:text-red-500 transition-colors"
+                        >
+                          清空
+                        </button>
+                      )}
                     </div>
                     <div className="max-h-48 overflow-y-auto space-y-1.5 scrollbar-thin">
-                      {[...uploadFiles].sort((a, b) => a.name.localeCompare(b.name)).map((file, i) => (
-                        <div key={`${file.name}-${i}`} className="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                          <FileText className="w-4 h-4 text-gray-400 shrink-0" />
-                          <span className="text-sm text-gray-700 dark:text-gray-300 truncate flex-1">{file.name}</span>
-                          <span className="text-xs text-gray-400 shrink-0">{(file.size / 1024).toFixed(1)} KB</span>
-                          <button
-                            onClick={() => setUploadFiles(prev => prev.filter((_, idx) => idx !== i))}
-                            className="p-1 text-gray-400 hover:text-red-500 transition-colors shrink-0"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                      ))}
+                      {[...uploadFiles].sort((a, b) => a.name.localeCompare(b.name)).map((file, i) => {
+                        const status = uploadFileStatuses[file.name] || 'pending';
+                        return (
+                          <div key={`${file.name}-${i}`} className="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                            <FileText className="w-4 h-4 text-gray-400 shrink-0" />
+                            <span className="text-sm text-gray-700 dark:text-gray-300 truncate flex-1">{file.name}</span>
+                            <span className="text-xs text-gray-400 shrink-0">{(file.size / 1024).toFixed(1)} KB</span>
+                            {uploading && status === 'uploading' && (
+                              <Loader2 className="w-4 h-4 text-purple-500 animate-spin shrink-0" />
+                            )}
+                            {uploading && status === 'done' && (
+                              <Check className="w-4 h-4 text-green-500 shrink-0" />
+                            )}
+                            {uploading && status === 'error' && (
+                              <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+                            )}
+                            {!uploading && (
+                              <button
+                                onClick={() => setUploadFiles(prev => prev.filter((_, idx) => idx !== i))}
+                                className="p-1 text-gray-400 hover:text-red-500 transition-colors shrink-0"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
+                  </div>
+                )}
+
+                {/* Progress bar */}
+                {uploading && uploadProgress.total > 0 && (
+                  <div className="space-y-1.5">
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <div
+                        className="bg-purple-500 h-2 rounded-full transition-all duration-300"
+                        style={{
+                          width: `${(uploadProgress.completed / uploadProgress.total) * 100}%`,
+                        }}
+                      />
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                      已完成 {uploadProgress.completed}/{uploadProgress.total}
+                    </p>
                   </div>
                 )}
 
@@ -596,7 +656,7 @@ export function AdminDashboard() {
                     className="flex items-center gap-1.5 px-5 py-2 bg-purple-500 hover:bg-purple-600 disabled:bg-purple-500/50 text-white text-sm font-medium rounded-lg transition-colors"
                   >
                     {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                    上传 {uploadFiles.length > 0 ? `(${uploadFiles.length})` : ''}
+                    {uploading && uploadProgress.total > 0 ? `已完成 ${uploadProgress.completed}/${uploadProgress.total}` : '上传'}
                   </button>
                 </div>
               </div>
