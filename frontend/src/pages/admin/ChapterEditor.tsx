@@ -109,13 +109,13 @@ export function ChapterEditor({ novelId, onSwitchToUpload }: ChapterEditorProps)
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold text-gray-900 dark:text-white">章节管理</h2>
       </div>
 
-      <div className="flex gap-4">
-        <div className="w-1/3 bg-white dark:bg-gray-900 rounded-xl p-4 border border-gray-200 dark:border-gray-800">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-1 bg-white dark:bg-gray-900 rounded-xl p-4 border border-gray-200 dark:border-gray-800 h-fit">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">章节列表</h3>
             {onSwitchToUpload && (
@@ -139,7 +139,7 @@ export function ChapterEditor({ novelId, onSwitchToUpload }: ChapterEditorProps)
               <p className="text-sm">暂无章节</p>
             </div>
           ) : (
-            <div className="space-y-1 max-h-96 overflow-y-auto">
+            <div className="space-y-1 max-h-[600px] overflow-y-auto">
               {chapters.map(chapter => (
                 <button
                   key={chapter.id}
@@ -157,9 +157,9 @@ export function ChapterEditor({ novelId, onSwitchToUpload }: ChapterEditorProps)
           )}
         </div>
 
-        <div className="w-2/3 space-y-4">
+        <div className="lg:col-span-2 space-y-4">
           {selectedChapterId === null && (
-            <div className="flex flex-col items-center justify-center h-96 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 text-gray-400 dark:text-gray-500">
+            <div className="flex flex-col items-center justify-center min-h-[400px] bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 text-gray-400 dark:text-gray-500">
               <FileText className="w-12 h-12 mb-3 opacity-40" />
               <p>请选择章节</p>
             </div>
@@ -207,8 +207,8 @@ export function ChapterEditor({ novelId, onSwitchToUpload }: ChapterEditorProps)
                     <textarea
                       value={chapterContent}
                       onChange={(e) => setChapterContent(e.target.value)}
-                      rows={20}
-                      className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all resize-y min-h-96"
+                      rows={15}
+                      className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all resize-y min-h-[300px]"
                       placeholder="章节内容..."
                     />
                   )}
