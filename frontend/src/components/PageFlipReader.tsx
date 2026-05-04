@@ -158,7 +158,7 @@ export function PageFlipReader({ theme, fontSize, onToggleToolbar }: PageFlipRea
             第{chapter?.chapter_number}章 {chapter?.title}
           </h2>
         )}
-        <div className="flex-1 relative overflow-hidden">
+        <div className="flex-1 overflow-y-auto scrollbar-thin">
           <AnimatePresence mode="wait" custom={direction}>
             <motion.div
               key={currentPage}
@@ -167,7 +167,6 @@ export function PageFlipReader({ theme, fontSize, onToggleToolbar }: PageFlipRea
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: direction > 0 ? '-100%' : '100%', opacity: 0 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="absolute inset-0"
             >
               {currentPage === 0 && hasPrev && (
                 <div className={`mb-4 text-center text-sm ${theme.progressText} opacity-50`}>

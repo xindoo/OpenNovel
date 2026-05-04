@@ -212,19 +212,17 @@ publicRouter.get('/novels/:id/chapters/:chapterId', async (c) => {
 
   const content = await object.text();
 
-  // Increment views unless noCount query param is present
   const noCount = c.req.query('noCount');
   if (!noCount) {
     await c.env.DB.prepare(`
-      INSERT INTO chapter_engagements (chapter_id, views) VALUES (?, 1)
-      ON CONFLICT(chapter_id) DO UPDATE SET views = views + 1, updated_at = datetime('now')
-    `).bind(chapterId).run();
+      INSERT INTO chapter_engagements (novel_id, chapter_id, chapter_number, views) VALUES (?, ?, ?, 1)
+      ON CONFLICT(novel_id, chapter_id) DO UPDATE SET views = views + 1, updated_at = datetime('now')
+    `).bind(novelId, chapterId, chapter.chapter_number).run();
   }
 
-  // Fetch engagement data
   const engagementRow = await c.env.DB.prepare(`
-    SELECT * FROM chapter_engagements WHERE chapter_id = ?
-  `).bind(chapterId).first<ChapterEngagement>();
+    SELECT * FROM chapter_engagements WHERE novel_id = ? AND chapter_id = ?
+  `).bind(novelId, chapterId).first<ChapterEngagement>();
 
   const engagement: ChapterEngagement = engagementRow
     ? {
@@ -232,7 +230,9 @@ publicRouter.get('/novels/:id/chapters/:chapterId', async (c) => {
         updated_at: new Date(engagementRow.updated_at).getTime() / 1000
       }
     : {
+        novel_id: novelId,
         chapter_id: chapterId,
+        chapter_number: chapter.chapter_number,
         likes: 0,
         dislikes: 0,
         views: 0,
@@ -266,61 +266,33 @@ publicRouter.post('/novels/:id/chapters/:chapterId/like', async (c) => {
   const chapterId = parseInt(c.req.param('chapterId'), 10);
 
   if (isNaN(novelId) || isNaN(chapterId)) {
-    const response: ApiResponse = {
-      success: false,
-      error: 'Invalid ID'
-    };
-    return c.json(response, 400);
+    return c.json({ success: false, error: 'Invalid ID' } as ApiResponse, 400);
   }
 
-  // Verify novel exists
   const novel = await c.env.DB.prepare('SELECT id FROM novels WHERE id = ?').bind(novelId).first();
   if (!novel) {
-    const response: ApiResponse = {
-      success: false,
-      error: 'Novel not found'
-    };
-    return c.json(response, 404);
+    return c.json({ success: false, error: 'Novel not found' } as ApiResponse, 404);
   }
 
-  // Verify chapter exists
-  const chapter = await c.env.DB.prepare('SELECT id FROM chapters WHERE id = ? AND novel_id = ?').bind(chapterId, novelId).first();
+  const chapter = await c.env.DB.prepare('SELECT id, chapter_number FROM chapters WHERE id = ? AND novel_id = ?').bind(chapterId, novelId).first<{ id: number; chapter_number: number }>();
   if (!chapter) {
-    const response: ApiResponse = {
-      success: false,
-      error: 'Chapter not found'
-    };
-    return c.json(response, 404);
+    return c.json({ success: false, error: 'Chapter not found' } as ApiResponse, 404);
   }
 
   await c.env.DB.prepare(`
-    INSERT INTO chapter_engagements (chapter_id, likes) VALUES (?, 1)
-    ON CONFLICT(chapter_id) DO UPDATE SET likes = likes + 1, updated_at = datetime('now')
-  `).bind(chapterId).run();
+    INSERT INTO chapter_engagements (novel_id, chapter_id, chapter_number, likes) VALUES (?, ?, ?, 1)
+    ON CONFLICT(novel_id, chapter_id) DO UPDATE SET likes = likes + 1, updated_at = datetime('now')
+  `).bind(novelId, chapterId, chapter.chapter_number).run();
 
   const engagementRow = await c.env.DB.prepare(`
-    SELECT * FROM chapter_engagements WHERE chapter_id = ?
-  `).bind(chapterId).first<ChapterEngagement>();
+    SELECT * FROM chapter_engagements WHERE novel_id = ? AND chapter_id = ?
+  `).bind(novelId, chapterId).first<ChapterEngagement>();
 
   const engagement: ChapterEngagement = engagementRow
-    ? {
-        ...engagementRow,
-        updated_at: new Date(engagementRow.updated_at).getTime() / 1000
-      }
-    : {
-        chapter_id: chapterId,
-        likes: 0,
-        dislikes: 0,
-        views: 0,
-        updated_at: 0
-      };
+    ? { ...engagementRow, updated_at: new Date(engagementRow.updated_at).getTime() / 1000 }
+    : { novel_id: novelId, chapter_id: chapterId, chapter_number: chapter.chapter_number, likes: 0, dislikes: 0, views: 0, updated_at: 0 };
 
-  const response: ApiResponse<ChapterEngagement> = {
-    success: true,
-    data: engagement
-  };
-
-  return c.json(response);
+  return c.json({ success: true, data: engagement } as ApiResponse<ChapterEngagement>);
 });
 
 // POST /api/novels/:id/chapters/:chapterId/dislike - Increment dislikes
@@ -329,61 +301,33 @@ publicRouter.post('/novels/:id/chapters/:chapterId/dislike', async (c) => {
   const chapterId = parseInt(c.req.param('chapterId'), 10);
 
   if (isNaN(novelId) || isNaN(chapterId)) {
-    const response: ApiResponse = {
-      success: false,
-      error: 'Invalid ID'
-    };
-    return c.json(response, 400);
+    return c.json({ success: false, error: 'Invalid ID' } as ApiResponse, 400);
   }
 
-  // Verify novel exists
   const novel = await c.env.DB.prepare('SELECT id FROM novels WHERE id = ?').bind(novelId).first();
   if (!novel) {
-    const response: ApiResponse = {
-      success: false,
-      error: 'Novel not found'
-    };
-    return c.json(response, 404);
+    return c.json({ success: false, error: 'Novel not found' } as ApiResponse, 404);
   }
 
-  // Verify chapter exists
-  const chapter = await c.env.DB.prepare('SELECT id FROM chapters WHERE id = ? AND novel_id = ?').bind(chapterId, novelId).first();
+  const chapter = await c.env.DB.prepare('SELECT id, chapter_number FROM chapters WHERE id = ? AND novel_id = ?').bind(chapterId, novelId).first<{ id: number; chapter_number: number }>();
   if (!chapter) {
-    const response: ApiResponse = {
-      success: false,
-      error: 'Chapter not found'
-    };
-    return c.json(response, 404);
+    return c.json({ success: false, error: 'Chapter not found' } as ApiResponse, 404);
   }
 
   await c.env.DB.prepare(`
-    INSERT INTO chapter_engagements (chapter_id, dislikes) VALUES (?, 1)
-    ON CONFLICT(chapter_id) DO UPDATE SET dislikes = dislikes + 1, updated_at = datetime('now')
-  `).bind(chapterId).run();
+    INSERT INTO chapter_engagements (novel_id, chapter_id, chapter_number, dislikes) VALUES (?, ?, ?, 1)
+    ON CONFLICT(novel_id, chapter_id) DO UPDATE SET dislikes = dislikes + 1, updated_at = datetime('now')
+  `).bind(novelId, chapterId, chapter.chapter_number).run();
 
   const engagementRow = await c.env.DB.prepare(`
-    SELECT * FROM chapter_engagements WHERE chapter_id = ?
-  `).bind(chapterId).first<ChapterEngagement>();
+    SELECT * FROM chapter_engagements WHERE novel_id = ? AND chapter_id = ?
+  `).bind(novelId, chapterId).first<ChapterEngagement>();
 
   const engagement: ChapterEngagement = engagementRow
-    ? {
-        ...engagementRow,
-        updated_at: new Date(engagementRow.updated_at).getTime() / 1000
-      }
-    : {
-        chapter_id: chapterId,
-        likes: 0,
-        dislikes: 0,
-        views: 0,
-        updated_at: 0
-      };
+    ? { ...engagementRow, updated_at: new Date(engagementRow.updated_at).getTime() / 1000 }
+    : { novel_id: novelId, chapter_id: chapterId, chapter_number: chapter.chapter_number, likes: 0, dislikes: 0, views: 0, updated_at: 0 };
 
-  const response: ApiResponse<ChapterEngagement> = {
-    success: true,
-    data: engagement
-  };
-
-  return c.json(response);
+  return c.json({ success: true, data: engagement } as ApiResponse<ChapterEngagement>);
 });
 
 // POST /api/novels/:id/chapters/:chapterId/unlike - Decrement likes (min 0)
@@ -392,61 +336,33 @@ publicRouter.post('/novels/:id/chapters/:chapterId/unlike', async (c) => {
   const chapterId = parseInt(c.req.param('chapterId'), 10);
 
   if (isNaN(novelId) || isNaN(chapterId)) {
-    const response: ApiResponse = {
-      success: false,
-      error: 'Invalid ID'
-    };
-    return c.json(response, 400);
+    return c.json({ success: false, error: 'Invalid ID' } as ApiResponse, 400);
   }
 
-  // Verify novel exists
   const novel = await c.env.DB.prepare('SELECT id FROM novels WHERE id = ?').bind(novelId).first();
   if (!novel) {
-    const response: ApiResponse = {
-      success: false,
-      error: 'Novel not found'
-    };
-    return c.json(response, 404);
+    return c.json({ success: false, error: 'Novel not found' } as ApiResponse, 404);
   }
 
-  // Verify chapter exists
-  const chapter = await c.env.DB.prepare('SELECT id FROM chapters WHERE id = ? AND novel_id = ?').bind(chapterId, novelId).first();
+  const chapter = await c.env.DB.prepare('SELECT id, chapter_number FROM chapters WHERE id = ? AND novel_id = ?').bind(chapterId, novelId).first<{ id: number; chapter_number: number }>();
   if (!chapter) {
-    const response: ApiResponse = {
-      success: false,
-      error: 'Chapter not found'
-    };
-    return c.json(response, 404);
+    return c.json({ success: false, error: 'Chapter not found' } as ApiResponse, 404);
   }
 
   await c.env.DB.prepare(`
-    INSERT INTO chapter_engagements (chapter_id, likes) VALUES (?, 0)
-    ON CONFLICT(chapter_id) DO UPDATE SET likes = MAX(0, likes - 1), updated_at = datetime('now')
-  `).bind(chapterId).run();
+    INSERT INTO chapter_engagements (novel_id, chapter_id, chapter_number, likes) VALUES (?, ?, ?, 0)
+    ON CONFLICT(novel_id, chapter_id) DO UPDATE SET likes = MAX(0, likes - 1), updated_at = datetime('now')
+  `).bind(novelId, chapterId, chapter.chapter_number).run();
 
   const engagementRow = await c.env.DB.prepare(`
-    SELECT * FROM chapter_engagements WHERE chapter_id = ?
-  `).bind(chapterId).first<ChapterEngagement>();
+    SELECT * FROM chapter_engagements WHERE novel_id = ? AND chapter_id = ?
+  `).bind(novelId, chapterId).first<ChapterEngagement>();
 
   const engagement: ChapterEngagement = engagementRow
-    ? {
-        ...engagementRow,
-        updated_at: new Date(engagementRow.updated_at).getTime() / 1000
-      }
-    : {
-        chapter_id: chapterId,
-        likes: 0,
-        dislikes: 0,
-        views: 0,
-        updated_at: 0
-      };
+    ? { ...engagementRow, updated_at: new Date(engagementRow.updated_at).getTime() / 1000 }
+    : { novel_id: novelId, chapter_id: chapterId, chapter_number: chapter.chapter_number, likes: 0, dislikes: 0, views: 0, updated_at: 0 };
 
-  const response: ApiResponse<ChapterEngagement> = {
-    success: true,
-    data: engagement
-  };
-
-  return c.json(response);
+  return c.json({ success: true, data: engagement } as ApiResponse<ChapterEngagement>);
 });
 
 // POST /api/novels/:id/chapters/:chapterId/undislike - Decrement dislikes (min 0)
@@ -455,61 +371,53 @@ publicRouter.post('/novels/:id/chapters/:chapterId/undislike', async (c) => {
   const chapterId = parseInt(c.req.param('chapterId'), 10);
 
   if (isNaN(novelId) || isNaN(chapterId)) {
-    const response: ApiResponse = {
-      success: false,
-      error: 'Invalid ID'
-    };
-    return c.json(response, 400);
+    return c.json({ success: false, error: 'Invalid ID' } as ApiResponse, 400);
   }
 
-  // Verify novel exists
   const novel = await c.env.DB.prepare('SELECT id FROM novels WHERE id = ?').bind(novelId).first();
   if (!novel) {
-    const response: ApiResponse = {
-      success: false,
-      error: 'Novel not found'
-    };
-    return c.json(response, 404);
+    return c.json({ success: false, error: 'Novel not found' } as ApiResponse, 404);
   }
 
-  // Verify chapter exists
-  const chapter = await c.env.DB.prepare('SELECT id FROM chapters WHERE id = ? AND novel_id = ?').bind(chapterId, novelId).first();
+  const chapter = await c.env.DB.prepare('SELECT id, chapter_number FROM chapters WHERE id = ? AND novel_id = ?').bind(chapterId, novelId).first<{ id: number; chapter_number: number }>();
   if (!chapter) {
-    const response: ApiResponse = {
-      success: false,
-      error: 'Chapter not found'
-    };
-    return c.json(response, 404);
+    return c.json({ success: false, error: 'Chapter not found' } as ApiResponse, 404);
   }
 
   await c.env.DB.prepare(`
-    INSERT INTO chapter_engagements (chapter_id, dislikes) VALUES (?, 0)
-    ON CONFLICT(chapter_id) DO UPDATE SET dislikes = MAX(0, dislikes - 1), updated_at = datetime('now')
-  `).bind(chapterId).run();
+    INSERT INTO chapter_engagements (novel_id, chapter_id, chapter_number, dislikes) VALUES (?, ?, ?, 0)
+    ON CONFLICT(novel_id, chapter_id) DO UPDATE SET dislikes = MAX(0, dislikes - 1), updated_at = datetime('now')
+  `).bind(novelId, chapterId, chapter.chapter_number).run();
 
   const engagementRow = await c.env.DB.prepare(`
-    SELECT * FROM chapter_engagements WHERE chapter_id = ?
-  `).bind(chapterId).first<ChapterEngagement>();
+    SELECT * FROM chapter_engagements WHERE novel_id = ? AND chapter_id = ?
+  `).bind(novelId, chapterId).first<ChapterEngagement>();
 
   const engagement: ChapterEngagement = engagementRow
-    ? {
-        ...engagementRow,
-        updated_at: new Date(engagementRow.updated_at).getTime() / 1000
-      }
-    : {
-        chapter_id: chapterId,
-        likes: 0,
-        dislikes: 0,
-        views: 0,
-        updated_at: 0
-      };
+    ? { ...engagementRow, updated_at: new Date(engagementRow.updated_at).getTime() / 1000 }
+    : { novel_id: novelId, chapter_id: chapterId, chapter_number: chapter.chapter_number, likes: 0, dislikes: 0, views: 0, updated_at: 0 };
 
-  const response: ApiResponse<ChapterEngagement> = {
-    success: true,
-    data: engagement
-  };
+  return c.json({ success: true, data: engagement } as ApiResponse<ChapterEngagement>);
+});
 
-  return c.json(response);
+// GET /api/novels/:id/engagements - Get engagement data for all chapters of a novel
+publicRouter.get('/novels/:id/engagements', async (c) => {
+  const novelId = parseInt(c.req.param('id'), 10);
+
+  if (isNaN(novelId)) {
+    return c.json({ success: false, error: 'Invalid novel ID' } as ApiResponse, 400);
+  }
+
+  const { results } = await c.env.DB.prepare(`
+    SELECT * FROM chapter_engagements WHERE novel_id = ? ORDER BY chapter_number ASC
+  `).bind(novelId).all<ChapterEngagement>();
+
+  const engagements: ChapterEngagement[] = results.map(row => ({
+    ...row,
+    updated_at: new Date(row.updated_at).getTime() / 1000
+  }));
+
+  return c.json({ success: true, data: engagements } as ApiResponse<ChapterEngagement[]>);
 });
 
 // GET /api/storage/:key - Serve image/asset from R2 with proper content-type

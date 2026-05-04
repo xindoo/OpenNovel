@@ -33,7 +33,10 @@ export function ChapterEngagementBar({
   className = '',
 }: ChapterEngagementBarProps) {
   return (
-    <div className={`pt-6 mt-8 border-t ${theme.toolbarBorder} ${className}`}>
+    <div
+      className={`pt-6 mt-8 border-t ${theme.toolbarBorder} ${className}`}
+      onClick={(e) => e.stopPropagation()}
+    >
       <div className="flex items-center justify-center gap-6">
         <button
           onClick={(e) => { e.stopPropagation(); onLike(); }}

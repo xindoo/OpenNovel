@@ -102,6 +102,12 @@ export async function getChapter(
   return apiRequest<{ chapter: Chapter; content: string; engagement: ChapterEngagement }>(`/novels/${novelId}/chapters/${chapterId}${params}`);
 }
 
+export async function getChapterEngagements(
+  novelId: number
+): Promise<ApiResponse<ChapterEngagement[]>> {
+  return apiRequest<ChapterEngagement[]>(`/novels/${novelId}/engagements`);
+}
+
 export async function likeChapter(
   novelId: number,
   chapterId: number

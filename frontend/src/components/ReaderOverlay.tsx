@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronLeft, ChevronRight, List, Type, Sun, Moon, BookOpen, TextAlignJustify, Bookmark, BookmarkCheck } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, List, Type, Sun, Moon, BookOpen, TextAlignJustify, Bookmark, BookmarkCheck, Eye } from 'lucide-react';
 import { useReader } from '../components/ReaderContext';
 import { PageFlipReader } from './PageFlipReader';
 import { useRecentReads } from '../hooks/useRecentReads';
@@ -279,6 +279,12 @@ export function ReaderOverlay() {
               </p>
               <p className={`text-xs ${theme.progressText} truncate`}>
                 第{chapter?.chapter_number}章 {chapter?.title}
+                {engagement && engagement.views > 0 && (
+                  <span className="ml-1.5 inline-flex items-center gap-0.5">
+                    <Eye className="w-3 h-3 inline" />
+                    {engagement.views >= 10000 ? `${(engagement.views / 10000).toFixed(1)}万` : engagement.views >= 1000 ? `${(engagement.views / 1000).toFixed(1)}k` : engagement.views}
+                  </span>
+                )}
               </p>
             </div>
             <button

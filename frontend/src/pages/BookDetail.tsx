@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Heart, BookOpen, List, ChevronRight } from 'lucide-react';
-import { getNovel, getStorageUrl, type NovelWithChapters } from '../api';
+import { ArrowLeft, Heart, BookOpen, List, ChevronRight, Eye } from 'lucide-react';
+import { getNovel, getStorageUrl, getChapterEngagements, type NovelWithChapters, type ChapterEngagement } from '../api';
 import { useReader } from '../components/ReaderContext';
 import { useFavorites } from '../hooks/useFavorites';
 import { useRecentReads } from '../hooks/useRecentReads';
@@ -13,6 +13,7 @@ export function BookDetail() {
   const [novel, setNovel] = useState<NovelWithChapters | null>(null);
   const [loading, setLoading] = useState(true);
   const [showChapters, setShowChapters] = useState(true);
+  const [engagements, setEngagements] = useState<Map<number, ChapterEngagement>>(new Map());
   const { openReader } = useReader();
   const { isFavorite, toggleFavorite } = useFavorites();
   const { addRecentRead } = useRecentReads();
@@ -21,8 +22,16 @@ export function BookDetail() {
     if (!id) return;
     async function load() {
       setLoading(true);
-      const res = await getNovel(Number(id));
-      if (res.success && res.data) setNovel(res.data);
+      const [novelRes, engRes] = await Promise.all([
+        getNovel(Number(id)),
+        getChapterEngagements(Number(id)),
+      ]);
+      if (novelRes.success && novelRes.data) setNovel(novelRes.data);
+      if (engRes.success && engRes.data) {
+        const map = new Map<number, ChapterEngagement>();
+        for (const e of engRes.data) map.set(e.chapter_id, e);
+        setEngagements(map);
+      }
       setLoading(false);
     }
     load();
@@ -184,7 +193,21 @@ export function BookDetail() {
                 <span className="text-sm text-gray-700 dark:text-gray-300">
                   第{ch.chapter_number}章 {ch.title}
                 </span>
-                <ChevronRight className="w-4 h-4 text-gray-300 dark:text-gray-600" />
+                <div className="flex items-center gap-2 shrink-0">
+                  {(() => {
+                    const views = engagements.get(ch.id)?.views;
+                    if (views && views > 0) {
+                      return (
+                        <span className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
+                          <Eye className="w-3 h-3" />
+                          {views >= 10000 ? `${(views / 10000).toFixed(1)}万` : views >= 1000 ? `${(views / 1000).toFixed(1)}k` : views}
+                        </span>
+                      );
+                    }
+                    return null;
+                  })()}
+                  <ChevronRight className="w-4 h-4 text-gray-300 dark:text-gray-600" />
+                </div>
               </button>
             ))}
           </motion.div>
