@@ -4,11 +4,12 @@ import type {
   Chapter,
   NovelWithChapters,
   CategoryInfo,
-  ApiResponse
+  ApiResponse,
+  ChapterEngagement
 } from '../../src/types';
 
 // Re-export types for convenience
-export type { Novel, Chapter, NovelWithChapters, CategoryInfo, ApiResponse };
+export type { Novel, Chapter, NovelWithChapters, CategoryInfo, ApiResponse, ChapterEngagement };
 
 export interface PaginatedNovelsResponse {
   novels: Novel[];
@@ -94,9 +95,47 @@ export async function getNovel(id: number): Promise<ApiResponse<NovelWithChapter
 
 export async function getChapter(
   novelId: number,
+  chapterId: number,
+  noCount: boolean = false
+): Promise<ApiResponse<{ chapter: Chapter; content: string; engagement: ChapterEngagement }>> {
+  const params = noCount ? '?noCount=true' : '';
+  return apiRequest<{ chapter: Chapter; content: string; engagement: ChapterEngagement }>(`/novels/${novelId}/chapters/${chapterId}${params}`);
+}
+
+export async function likeChapter(
+  novelId: number,
   chapterId: number
-): Promise<ApiResponse<{ chapter: Chapter; content: string }>> {
-  return apiRequest<{ chapter: Chapter; content: string }>(`/novels/${novelId}/chapters/${chapterId}`);
+): Promise<ApiResponse<ChapterEngagement>> {
+  return apiRequest<ChapterEngagement>(`/novels/${novelId}/chapters/${chapterId}/like`, {
+    method: 'POST',
+  });
+}
+
+export async function unlikeChapter(
+  novelId: number,
+  chapterId: number
+): Promise<ApiResponse<ChapterEngagement>> {
+  return apiRequest<ChapterEngagement>(`/novels/${novelId}/chapters/${chapterId}/unlike`, {
+    method: 'POST',
+  });
+}
+
+export async function dislikeChapter(
+  novelId: number,
+  chapterId: number
+): Promise<ApiResponse<ChapterEngagement>> {
+  return apiRequest<ChapterEngagement>(`/novels/${novelId}/chapters/${chapterId}/dislike`, {
+    method: 'POST',
+  });
+}
+
+export async function undislikeChapter(
+  novelId: number,
+  chapterId: number
+): Promise<ApiResponse<ChapterEngagement>> {
+  return apiRequest<ChapterEngagement>(`/novels/${novelId}/chapters/${chapterId}/undislike`, {
+    method: 'POST',
+  });
 }
 
 export function getStorageUrl(key: string): string {

@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useReader } from './ReaderContext';
 import { usePagination } from '../hooks/usePagination';
 import type { ReadingTheme } from './ReaderOverlay';
+import { ChapterEngagementBar } from './ChapterEngagementBar';
+import { useChapterEngagement } from '../hooks/useChapterEngagement';
 
 interface PageFlipReaderProps {
   theme: ReadingTheme;
@@ -26,7 +28,14 @@ export function PageFlipReader({ theme, fontSize, onToggleToolbar }: PageFlipRea
     pagePrev,
     setPageInfo,
     prefetchNextChapter,
+    engagement: engagementFromContext,
   } = useReader();
+
+  const { engagement, isLiked, isDisliked, loading, toggleLike, toggleDislike } = useChapterEngagement(
+    novel?.id,
+    chapter?.id,
+    engagementFromContext
+  );
 
   const containerRef = useRef<HTMLDivElement>(null);
   const [dims, setDims] = useState({ width: 0, height: 0 });
@@ -172,6 +181,20 @@ export function PageFlipReader({ theme, fontSize, onToggleToolbar }: PageFlipRea
                 <div className={`mt-8 text-center text-sm ${theme.progressText} opacity-50`}>
                   下一章 → {novel?.chapters[chapterIndex + 1]?.title}
                 </div>
+              )}
+              {currentPage === totalPages - 1 && (
+                <ChapterEngagementBar
+                  theme={theme}
+                  likes={engagement?.likes ?? 0}
+                  dislikes={engagement?.dislikes ?? 0}
+                  views={engagement?.views ?? 0}
+                  isLiked={isLiked}
+                  isDisliked={isDisliked}
+                  loading={loading}
+                  onLike={toggleLike}
+                  onDislike={toggleDislike}
+                  className="mt-4"
+                />
               )}
             </motion.div>
           </AnimatePresence>

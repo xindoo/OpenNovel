@@ -32,6 +32,14 @@ export interface NovelWithChapters extends Novel {
   chapters: Chapter[];
 }
 
+export interface ChapterEngagement {
+  chapter_id: number;
+  likes: number;
+  dislikes: number;
+  views: number;
+  updated_at: number;
+}
+
 export interface CategoryInfo {
   name: string;
   count: number;

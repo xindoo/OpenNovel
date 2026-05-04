@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback, useRef, type ReactNode } from 'react';
-import type { NovelWithChapters, Chapter } from '../api';
+import type { NovelWithChapters, Chapter, ChapterEngagement } from '../api';
 import { useReaderSettings } from '../hooks/useReaderSettings';
 import type { ReadingMode } from '../hooks/useReaderSettings';
 
@@ -11,6 +11,7 @@ interface ReaderState {
   chapter: Chapter | null;
   chapterIndex: number;
   content: string;
+  engagement: ChapterEngagement | null;
   readingMode: ReadingMode;
   currentPage: number;
   totalPages: number;
@@ -42,6 +43,7 @@ const initialState: ReaderState = {
   chapter: null,
   chapterIndex: 0,
   content: '',
+  engagement: null,
   readingMode: 'page',
   currentPage: 0,
   totalPages: 0,
@@ -68,6 +70,7 @@ export function ReaderProvider({ children }: { children: ReactNode }) {
         ...prev,
         chapter: cached.chapter,
         content: cached.content,
+        engagement: null,
         chapterIndex: index,
         currentPage: resetPage ? 0 : prev.currentPage,
       }));
@@ -81,6 +84,7 @@ export function ReaderProvider({ children }: { children: ReactNode }) {
         ...prev,
         chapter: result.data!.chapter,
         content: result.data!.content,
+        engagement: result.data!.engagement,
         chapterIndex: index,
         currentPage: resetPage ? 0 : prev.currentPage,
       }));
@@ -94,6 +98,7 @@ export function ReaderProvider({ children }: { children: ReactNode }) {
       chapter: novel.chapters[chapterIndex] || null,
       chapterIndex,
       content: '',
+      engagement: null,
       readingMode: settings.readingMode,
       currentPage: 0,
       totalPages: 0,
@@ -163,7 +168,7 @@ export function ReaderProvider({ children }: { children: ReactNode }) {
 
     const nextChapter = state.novel.chapters[nextIndex];
     const { getChapter } = await import('../api');
-    const result = await getChapter(state.novel.id, nextChapter.id);
+    const result = await getChapter(state.novel.id, nextChapter.id, true);
     if (result.success && result.data) {
       prefetchCache.current.set(nextIndex, {
         chapter: result.data.chapter,

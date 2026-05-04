@@ -7,6 +7,8 @@ import { useRecentReads } from '../hooks/useRecentReads';
 import { useBookmarks } from '../hooks/useBookmarks';
 import type { BookmarkItem } from '../hooks/useBookmarks';
 import { getStorageUrl } from '../api';
+import { ChapterEngagementBar } from './ChapterEngagementBar';
+import { useChapterEngagement } from '../hooks/useChapterEngagement';
 
 const FONT_SIZES = [14, 16, 18, 20, 22] as const;
 
@@ -102,6 +104,7 @@ export function ReaderOverlay() {
     readingMode, setReadingMode, pageNext, pagePrev,
     currentPage, totalPages, setPageInfo,
     fontSizeIdx, themeIdx, setFontSizeIdx, setThemeIdx,
+    engagement: engagementFromContext,
   } = useReader();
   const { addRecentRead } = useRecentReads();
 
@@ -112,6 +115,12 @@ export function ReaderOverlay() {
   const [sidebarTab, setSidebarTab] = useState<'chapters' | 'bookmarks'>('chapters');
   const [scrollModePercent, setScrollModePercent] = useState(0);
   const contentRef = useRef<HTMLDivElement>(null);
+
+  const { engagement, isLiked, isDisliked, loading, toggleLike, toggleDislike } = useChapterEngagement(
+    novel?.id,
+    chapter?.id,
+    engagementFromContext
+  );
 
   const currentScrollPercent = readingMode === 'page'
     ? (totalPages > 1 ? Math.round((currentPage / (totalPages - 1)) * 100 * 10) / 10 : 0)
@@ -301,6 +310,17 @@ export function ReaderOverlay() {
               <div className="leading-[1.8] whitespace-pre-wrap break-words">
                 {content || '加载中...'}
               </div>
+              <ChapterEngagementBar
+                theme={theme}
+                likes={engagement?.likes ?? 0}
+                dislikes={engagement?.dislikes ?? 0}
+                views={engagement?.views ?? 0}
+                isLiked={isLiked}
+                isDisliked={isDisliked}
+                loading={loading}
+                onLike={toggleLike}
+                onDislike={toggleDislike}
+              />
             </div>
           </div>
         )}
