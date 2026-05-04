@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Lock, User, AlertCircle } from 'lucide-react';
+import { Lock, User, AlertCircle, BookOpen } from 'lucide-react';
 import { setAdminCredentials, clearAdminCredentials, listNovelsAdmin } from '../api';
 import { AnimatedCharacter } from '../components/AnimatedCharacter';
 
@@ -37,7 +37,13 @@ export function AdminLogin() {
         className="w-full max-w-md"
       >
         <div className="flex justify-center mb-8">
-          <AnimatedCharacter className="w-20 h-20" />
+          <Link to="/" className="flex flex-col items-center gap-2 hover:opacity-80 transition-opacity">
+            <AnimatedCharacter className="w-20 h-20" />
+            <div className="flex items-center gap-2">
+              <BookOpen className="w-5 h-5 text-white/80" />
+              <span className="text-lg font-bold text-white">OpenNovel</span>
+            </div>
+          </Link>
         </div>
 
         <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-8 shadow-2xl border border-white/20">

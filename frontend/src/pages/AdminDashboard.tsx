@@ -49,10 +49,14 @@ export function AdminDashboard() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <button
+          onClick={() => navigate('/')}
+          className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+        >
           <BookOpen className="w-6 h-6 text-purple-500" />
-          <h1 className="text-lg font-bold text-gray-900 dark:text-white">管理后台</h1>
-        </div>
+          <span className="text-lg font-bold text-gray-900 dark:text-white">OpenNovel</span>
+          <span className="text-sm text-gray-400 dark:text-gray-500">管理后台</span>
+        </button>
         <button
           onClick={handleLogout}
           className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
