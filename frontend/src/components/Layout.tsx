@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
+import { Footer } from './Footer';
 import { useTheme } from '../hooks/useTheme';
 
 export function Layout() {
@@ -33,6 +34,7 @@ export function Layout() {
       <main className="pt-14 min-h-screen bg-[var(--bg-color)] text-[var(--text-color)]">
         <Outlet />
       </main>
+      <Footer />
     </>
   );
 }
